@@ -1,0 +1,14 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="VoidUI.Views.HelpersPage">
+    <ScrollViewer Background="Transparent" Padding="24,20">
+        <StackPanel Spacing="20" MaxWidth="1000">
+            <!-- Page header -->
+            <StackPanel Spacing="4" Margin="0,0,0,4">
+                <TextBlock Text="HELPERS" FontSize="20" FontWeight="800" Foreground="{StaticResource TextPrimary}"/>
+                <TextBlock Text="External tools, maps, and calculators for Rust gameplay" FontSize="12" Foreground="{StaticResource TextTertiary}"/>
+            </StackPanel>
+            <WrapPanel Name="HelpersWrap" HorizontalAlignment="Left"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Design tokens (mirrors the app's Themes/Theme.axaml) -->
+
+    <!-- Surfaces -->
+    <SolidColorBrush x:Key="SurfaceBase" Color="#0c0c0e"/>
+    <SolidColorBrush x:Key="SurfaceLow" Color="#111114"/>
+    <SolidColorBrush x:Key="SurfaceMid" Color="#18181c"/>
+    <SolidColorBrush x:Key="SurfaceHigh" Color="#1f1f24"/>
+    <SolidColorBrush x:Key="SurfaceOverlay" Color="#27272e"/>
+
+    <!-- Borders -->
+    <SolidColorBrush x:Key="BorderSubtle" Color="#1a1a1f"/>
+    <SolidColorBrush x:Key="BorderDefault" Color="#232329"/>
+    <SolidColorBrush x:Key="BorderStrong" Color="#35353d"/>
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="TextPrimary" Color="#ededef"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#9d9da5"/>
+    <SolidColorBrush x:Key="TextTertiary" Color="#5c5c66"/>
+    <SolidColorBrush x:Key="TextDisabled" Color="#3a3a42"/>
+
+    <!-- Accent -->
+    <SolidColorBrush x:Key="AccentDefault" Color="#7c5cfc"/>
+    <SolidColorBrush x:Key="AccentHover" Color="#9178ff"/>
+    <SolidColorBrush x:Key="AccentSubtle" Color="#2a2248"/>
+
+    <!-- Semantic -->
+    <SolidColorBrush x:Key="GreenDefault" Color="#34d399"/>
+    <SolidColorBrush x:Key="RedDefault" Color="#f87171"/>
+
+</ResourceDictionary>

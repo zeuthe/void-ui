@@ -1,0 +1,512 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:VoidUI"
+        x:Class="VoidUI.MainWindow"
+        Title="Sweety Void"
+        Width="1100" Height="720"
+        WindowStartupLocation="CenterScreen"
+        Icon="avares://VoidUI/assets/logo.ico"
+        Background="Transparent"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        SystemDecorations="None"
+        TransparencyLevelHint="AcrylicBlur"
+        Opacity="1">
+
+    <Window.Styles>
+        <!-- ─── GLOBAL RESET ─── -->
+        <Style Selector="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="CornerRadius" Value="0"/>
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <!-- ─── TAB BUTTONS ─── -->
+        <Style Selector="Button.tab">
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="600"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Margin" Value="1,0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextTertiary}"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.tab:pointerover">
+            <Setter Property="Background" Value="{StaticResource SurfaceHigh}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+        </Style>
+        <Style Selector="Button.tab.active">
+            <Setter Property="Background" Value="{StaticResource AccentSubtle}"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentDefault}"/>
+            <Setter Property="FontWeight" Value="700"/>
+        </Style>
+
+        <!-- ─── PLAY BUTTON ─── -->
+        <Style Selector="Button.play">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="24,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="600"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceMid}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderDefault}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+        </Style>
+        <Style Selector="Button.play:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource SurfaceHigh}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrong}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
+        <Style Selector="Button.play:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource AccentDefault}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentDefault}"/>
+            <Setter Property="Foreground" Value="#ffffff"/>
+        </Style>
+
+        <!-- ─── OVERLAY / UTILITY BUTTON ─── -->
+        <Style Selector="Button.util">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="600"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceMid}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderDefault}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+        </Style>
+        <Style Selector="Button.util:pointerover">
+            <Setter Property="Background" Value="{StaticResource SurfaceHigh}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrong}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
+
+        <!-- ─── WINDOW BUTTONS ─── -->
+        <Style Selector="Button.winbtn">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="FontWeight" Value="400"/>
+            <Setter Property="Foreground" Value="{StaticResource TextTertiary}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.winbtn:pointerover">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceHigh}"/>
+        </Style>
+        <Style Selector="Button.winbtn.close">
+            <Setter Property="Foreground" Value="{StaticResource RedDefault}"/>
+        </Style>
+        <Style Selector="Button.winbtn.close:pointerover">
+            <Setter Property="Foreground" Value="#ffffff"/>
+            <Setter Property="Background" Value="{StaticResource RedDefault}"/>
+        </Style>
+
+        <!-- ─── SEARCH ─── -->
+        <Style Selector="TextBox.search">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="MinWidth" Value="170"/>
+            <Setter Property="MaxWidth" Value="210"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceMid}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderDefault}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Watermark" Value="Search..."/>
+            <Setter Property="CaretBrush" Value="{StaticResource TextPrimary}"/>
+        </Style>
+        <Style Selector="TextBox.search:focus">
+            <Setter Property="BorderBrush" Value="{StaticResource AccentDefault}"/>
+        </Style>
+
+        <!-- ─── FEATURE CARD (Home) ─── -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{StaticResource SurfaceLow}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="24"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Border.card:pointerover">
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrong}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceMid}"/>
+        </Style>
+
+        <!-- ─── SECTION CARD ─── -->
+        <Style Selector="Border.section">
+            <Setter Property="Background" Value="{StaticResource SurfaceLow}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSubtle}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="24,20"/>
+        </Style>
+        <Style Selector="Border.section:pointerover">
+            <Setter Property="BorderBrush" Value="{StaticResource BorderDefault}"/>
+        </Style>
+
+        <!-- ─── SECTION HEADER ─── -->
+        <Style Selector="TextBlock.section-header">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="700"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentDefault}"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <!-- ─── FIELD LABELS ─── -->
+        <Style Selector="TextBlock.field-label">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="600"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
+        <Style Selector="TextBlock.field-desc">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="{StaticResource TextTertiary}"/>
+        </Style>
+
+        <!-- ─── PILL BUTTON (option groups) ─── -->
+        <Style Selector="Button.pill">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="MinWidth" Value="64"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="600"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderDefault}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.pill:pointerover">
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrong}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceHigh}"/>
+        </Style>
+        <Style Selector="Button.pill.active">
+            <Setter Property="Background" Value="{StaticResource AccentSubtle}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentDefault}"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentDefault}"/>
+        </Style>
+
+        <!-- ─── ACTION BUTTON ─── -->
+        <Style Selector="Button.action">
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Padding" Value="20,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="700"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Background" Value="{StaticResource AccentDefault}"/>
+            <Setter Property="Foreground" Value="#ffffff"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.action:pointerover">
+            <Setter Property="Background" Value="{StaticResource AccentHover}"/>
+        </Style>
+
+        <!-- ─── GHOST BUTTON ─── -->
+        <Style Selector="Button.ghost">
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="600"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceMid}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderDefault}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ghost:pointerover">
+            <Setter Property="Background" Value="{StaticResource SurfaceHigh}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrong}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
+
+        <!-- ─── THEME BUTTON (Settings) ─── -->
+        <Style Selector="Button.theme-btn">
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="MinWidth" Value="100"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="600"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <!-- ─── TOGGLE SWITCH ─── -->
+        <Style Selector="Border.toggle">
+            <Setter Property="Width" Value="42"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceOverlay}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderDefault}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Border.toggle.on">
+            <Setter Property="Background" Value="{StaticResource AccentDefault}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentDefault}"/>
+        </Style>
+        <Style Selector="Border.toggle Ellipse">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Fill" Value="#ffffff"/>
+            <Setter Property="Margin" Value="3,0,0,0"/>
+        </Style>
+        <Style Selector="Border.toggle.on Ellipse">
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="Margin" Value="0,0,3,0"/>
+        </Style>
+
+        <!-- ─── SLIDER (Material 3) ─── -->
+        <Style Selector="Slider:horizontal">
+            <Setter Property="Foreground" Value="{StaticResource AccentDefault}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="MinWidth" Value="60"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Panel Height="34">
+                        <!-- inactive track -->
+                        <Border
+                                Height="8"
+                                Margin="10,0"
+                                VerticalAlignment="Center"
+                                CornerRadius="4"
+                                Background="#26262e"/>
+                        <Track Name="PART_Track"
+                               Minimum="{TemplateBinding Minimum}"
+                               Maximum="{TemplateBinding Maximum}"
+                               Value="{TemplateBinding Value, Mode=TwoWay}"
+                               IsDirectionReversed="{TemplateBinding IsDirectionReversed}"
+                               Orientation="{TemplateBinding Orientation}"
+                               VerticalAlignment="Center">
+                            <Track.DecreaseButton>
+                                <RepeatButton Name="PART_DecreaseButton"
+                                              Focusable="False"
+                                              BorderThickness="0"
+                                              Background="{StaticResource AccentDefault}">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate>
+                                            <Border Name="PART_Fill"
+                                                    Height="8"
+                                                    Margin="10,0"
+                                                    VerticalAlignment="Center"
+                                                    CornerRadius="4">
+                                                <Border.Background>
+                                                    <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                                                        <GradientStop Color="#7c5cfc" Offset="0"/>
+                                                        <GradientStop Color="#9178ff" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Border.Background>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.DecreaseButton>
+                            <Track.Thumb>
+                                <Thumb Name="SliderThumb"
+                                       Width="7" Height="24" Margin="0" Padding="0"
+                                       Background="#f6f4ff"
+                                       Cursor="Hand">
+                                    <Thumb.Template>
+                                        <ControlTemplate>
+                                            <Border Name="PART_ThumbRoot"
+                                                    Width="7" Height="24"
+                                                    CornerRadius="3.5"
+                                                    Background="{TemplateBinding Background}"
+                                                    BoxShadow="0 0 0 0 #007c5cfc">
+                                                <Border.Transitions>
+                                                    <Transitions>
+                                                        <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.18"/>
+                                                    </Transitions>
+                                                </Border.Transitions>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                            <Track.IncreaseButton>
+                                <RepeatButton Name="PART_IncreaseButton"
+                                              Focusable="False"
+                                              BorderThickness="0"
+                                              Background="Transparent">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate>
+                                            <Border Background="Transparent"/>
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.IncreaseButton>
+                        </Track>
+                    </Panel>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <!-- M3: handle fattens on hover, handle-elevation glow -->
+        <Style Selector="Slider:horizontal:pointerover /template/ Thumb#SliderThumb">
+            <Setter Property="Width" Value="10"/>
+        </Style>
+        <Style Selector="Slider:horizontal:pointerover /template/ Border#PART_ThumbRoot">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="BoxShadow" Value="0 0 0 4 #457c5cfc"/>
+        </Style>
+
+        <!-- pressed: handle widest + strongest glow -->
+        <Style Selector="Slider:horizontal:pressed /template/ Thumb#SliderThumb">
+            <Setter Property="Width" Value="15"/>
+        </Style>
+        <Style Selector="Slider:horizontal:pressed /template/ Border#PART_ThumbRoot">
+            <Setter Property="Width" Value="15"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="BoxShadow" Value="0 0 0 7 #737c5cfc"/>
+        </Style>
+
+        <Style Selector="Slider:horizontal:disabled /template/ Border#PART_ThumbRoot">
+            <Setter Property="BoxShadow" Value="0 0 0 0 #00000000"/>
+        </Style>
+        <Style Selector="Slider:horizontal:disabled /template/ Border#PART_Fill">
+            <Setter Property="Background" Value="#3a3a45"/>
+        </Style>
+
+        <!-- ─── TEXTBOX ─── -->
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{StaticResource SurfaceMid}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderDefault}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="CaretBrush" Value="{StaticResource TextPrimary}"/>
+        </Style>
+        <Style Selector="TextBox:focus">
+            <Setter Property="BorderBrush" Value="{StaticResource AccentDefault}"/>
+        </Style>
+
+        <!-- ─── SCROLLBAR ─── -->
+        <Style Selector="ScrollViewer">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+    </Window.Styles>
+
+    <Border Background="{StaticResource SurfaceBase}" BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0" HorizontalAlignment="Stretch">
+        <Grid RowDefinitions="48,*,28">
+
+            <!-- ═══ TOP BAR ═══ -->
+            <Border Grid.Row="0" Background="{StaticResource SurfaceBase}"
+                    IsHitTestVisible="True" Name="TopBar" HorizontalAlignment="Stretch">
+                <Grid RowDefinitions="*,Auto" ColumnDefinitions="Auto,*,Auto">
+
+                    <!-- Col 0: Logo + Tabs -->
+                    <StackPanel Grid.Column="0" Grid.Row="0" Orientation="Horizontal" Spacing="10"
+                                VerticalAlignment="Center" Margin="4,0,0,0">
+                        <Border Name="LogoBtn" Cursor="Hand" Padding="6" CornerRadius="10"
+                                Background="{StaticResource SurfaceMid}">
+                            <Image Source="avares://VoidUI/assets/logo.ico" Width="22" Height="22"
+                                   VerticalAlignment="Center" Stretch="Uniform"/>
+                        </Border>
+                        <Border Width="1" Height="18" Background="{StaticResource BorderDefault}" VerticalAlignment="Center" Margin="2,0"/>
+                        <StackPanel Orientation="Horizontal" Spacing="0" VerticalAlignment="Center">
+                            <Button Classes="tab" Name="TabGraphics" Content="Graphics"/>
+                            <Button Classes="tab" Name="TabBinds" Content="Binds"/>
+                            <Button Classes="tab" Name="TabHelpers" Content="Helpers"/>
+                            <Button Classes="tab" Name="TabCrosshair" Content="Crosshair"/>
+                            <Button Classes="tab" Name="TabCombat" Content="Combat"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Col 2: Overlay + Search + Min + Close — far right -->
+                    <StackPanel Grid.Column="2" Grid.Row="0" Orientation="Horizontal" Spacing="6"
+                                VerticalAlignment="Center" Margin="0,0,6,0">
+                        <Button Classes="util" Name="OverlayBtn" Content="Overlay"/>
+                        <TextBox Classes="search" Name="GlobalSearch" Watermark="Search..."/>
+                        <Border Width="1" Height="20" Background="{StaticResource BorderDefault}" VerticalAlignment="Center" Margin="2,0"/>
+                        <Button Classes="winbtn" Name="MinBtn" Content="—"/>
+                        <Button Classes="winbtn close" Name="CloseBtn" Content="✕"/>
+                    </StackPanel>
+
+                    <!-- Play — absolutely centered in top bar -->
+                    <Button Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="0" Classes="play" Name="PlayBtn" Content="▶  PLAY"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <!-- Row 1: accent gradient line -->
+                    <Border Grid.Row="1" Grid.ColumnSpan="3" Height="1.5" HorizontalAlignment="Stretch" Opacity="0.8">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                                <GradientStop Color="Transparent" Offset="0"/>
+                                <GradientStop Color="#553cc0" Offset="0.2"/>
+                                <GradientStop Color="#9178ff" Offset="0.5"/>
+                                <GradientStop Color="#553cc0" Offset="0.8"/>
+                                <GradientStop Color="Transparent" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- ═══ GLOBAL SEARCH DROPDOWN ═══ -->
+            <Popup Name="SearchPopup"
+                   PlacementMode="Bottom" IsLightDismissEnabled="True"
+                   MinWidth="300" MaxWidth="380">
+                <Border Background="{StaticResource SurfaceMid}" BorderBrush="{StaticResource BorderDefault}"
+                        BorderThickness="1" CornerRadius="10"
+                        BoxShadow="0 10 28 0 #66000000" Padding="4">
+                    <ListBox Name="SearchList" MaxHeight="320" Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.Styles>
+                            <Style Selector="ListBoxItem">
+                                <Setter Property="Padding" Value="10,7"/>
+                                <Setter Property="CornerRadius" Value="6"/>
+                                <Setter Property="FontSize" Value="12"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                            </Style>
+                        </ListBox.Styles>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="{Binding Label}" Foreground="{StaticResource TextPrimary}"/>
+                                    <TextBlock Text="{Binding Category}" Foreground="{StaticResource TextTertiary}" FontSize="10"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </Popup>
+
+            <!-- ═══ PAGE CONTENT ═══ -->
+            <ContentControl Grid.Row="1" Name="PageContent" Margin="0" Background="Transparent"/>
+
+            <!-- ═══ STATUS BAR ═══ -->
+            <Border Grid.Row="2" Background="{StaticResource SurfaceBase}"
+                    BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,1,0,0">
+                <Grid Margin="16,0">
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Border Width="6" Height="6" CornerRadius="3" Background="{StaticResource GreenDefault}"
+                                Margin="0,0,2,0"/>
+                        <TextBlock Text="Ready" Foreground="{StaticResource TextTertiary}" FontSize="11"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

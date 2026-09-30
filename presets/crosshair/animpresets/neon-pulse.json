@@ -1,0 +1,20 @@
+{
+  "name": "Neon Pulse",
+  "description": "Fast neon color cycling with gentle pulse",
+  "speed": 7,
+  "palette": [
+    "#ff00ff",
+    "#00ffff",
+    "#88ff00",
+    "#ffff00"
+  ],
+  "type": "pulse",
+  "params": {
+    "scaleMin": 1.0,
+    "scaleMax": 1.15,
+    "opacityMin": 80,
+    "opacityMax": 100,
+    "colorCycle": true,
+    "cycleSpeed": 4.0
+  }
+}

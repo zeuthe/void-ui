@@ -1,0 +1,229 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="VoidUI.Views.CrosshairPage">
+    <Border Background="Transparent" Padding="24,20" ClipToBounds="True">
+    <Grid ColumnDefinitions="*,380" MaxWidth="1200"
+          VerticalAlignment="Stretch" HorizontalAlignment="Stretch" ClipToBounds="True">
+
+            <!-- Left: Preview + Applied Settings -->
+            <StackPanel Grid.Column="0" Spacing="10" VerticalAlignment="Top" Margin="0,0,12,0" ClipToBounds="True">
+                <Border Classes="section" ClipToBounds="True">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="LIVE PREVIEW" Classes="section-header" VerticalAlignment="Center"/>
+                            <Button Classes="pill" Name="StartOverlayBtn" Content="Start" MinWidth="50" Height="28" FontSize="11"/>
+                            <Button Classes="pill" Name="StopOverlayBtn" Content="Stop" MinWidth="50" Height="28" FontSize="11"/>
+                            <Button Classes="pill" Name="ResetBtn" Content="Reset" MinWidth="50" Height="28" FontSize="11"/>
+                        </StackPanel>
+                        <Border Background="{StaticResource SurfaceBase}" CornerRadius="10" Width="300" Height="300"
+                                HorizontalAlignment="Center" ClipToBounds="True"
+                                BorderBrush="{StaticResource BorderSubtle}" BorderThickness="1">
+                            <Canvas Name="CrosshairCanvas" Background="Transparent" Width="300" Height="300"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Border Classes="section" ClipToBounds="True">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="APPLIED SETTINGS" Classes="section-header" VerticalAlignment="Center"/>
+                            <Button Classes="pill" Name="CopyConfigBtn2" Content="Copy" MinWidth="50" Height="22" FontSize="10"/>
+                            <Button Classes="pill" Name="PasteConfigBtn" Content="Paste" MinWidth="50" Height="22" FontSize="10"/>
+                        </StackPanel>
+                        <TextBlock Name="ConfigMsg" Text="" Foreground="{StaticResource GreenDefault}" FontSize="10" IsVisible="False"/>
+                        <TextBlock Name="NbPreset" Text="Preset: Dot" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
+                        <TextBlock Name="NbAnimation" Text="Animation: None" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
+                        <TextBlock Name="NbMotion" Text="Motion: None" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
+                        <TextBlock Name="NbSize" Text="Size: 16px" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
+                        <TextBlock Name="NbThickness" Text="Thickness: 2px" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
+                        <TextBlock Name="NbOpacity" Text="Opacity: 100%" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
+                        <TextBlock Name="NbColor" Text="Color: #22c55e" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
+                        <TextBlock Name="NbSpeed" Text="Speed: 5x" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
+                        <TextBlock Name="NbPos" Text="Position: X 0 / Y 0" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
+                        <TextBlock Name="NbRotation" Text="Rotation: 0" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
+                        <TextBlock Name="NbBind" Text="Bind: F6" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Right: Controls (scrollable) -->
+            <ScrollViewer Grid.Column="1" Background="Transparent"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ClipToBounds="True">
+            <StackPanel Spacing="10" ClipToBounds="True">
+
+                <!-- Presets -->
+                <Border Classes="section" ClipToBounds="True">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="PRESETS" Classes="section-header"/>
+                        <WrapPanel Name="PresetGroup"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Color -->
+                <Border Classes="section" ClipToBounds="True">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="COLOR" Classes="section-header" VerticalAlignment="Center"/>
+                            <Button Classes="pill" Name="RainbowToggleBtn" Content="Rainbow" MinWidth="60" Height="24" FontSize="10"/>
+                        </StackPanel>
+                        <WrapPanel Name="ColorGroup"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Custom" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="60"/>
+                            <TextBox Name="CustomColorInput" Text="#22c55e" MinWidth="60" MaxWidth="80" FontSize="11" HorizontalContentAlignment="Center"/>
+                            <Button Classes="pill" Name="ApplyColorBtn" Content="Apply" MinWidth="50" Height="28" FontSize="11"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Rainbow (collapsed by default) -->
+                <Border Name="RainbowCard" ClipToBounds="True" MaxHeight="0" Opacity="0"
+                        CornerRadius="8" IsVisible="False">
+                    <StackPanel Spacing="8" Margin="12,10">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="RAINBOW" Classes="section-header" VerticalAlignment="Center"/>
+                            <Button Classes="pill" Name="AddAnimBtn" Content="+" MinWidth="28" Height="22" FontSize="14"/>
+                        </StackPanel>
+                        <WrapPanel Name="RainbowThemeGroup"/>
+                        <Border Name="RainbowPreviewBar" Height="20" CornerRadius="4"
+                                BorderBrush="{StaticResource BorderSubtle}" BorderThickness="1"/>
+                        <WrapPanel Name="RainbowPaletteGroup"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Speed" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="50"/>
+                            <Slider Name="RainbowSpeedSlider" Minimum="1" Maximum="10" Value="5" Width="120" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                            <TextBlock Name="RainbowSpeedValue" Text="5x" Foreground="{StaticResource TextPrimary}" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Animation -->
+                <Border Classes="section" ClipToBounds="True">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="ANIMATION" Classes="section-header"/>
+                        <WrapPanel Name="AnimGroup"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Motion -->
+                <Border Classes="section" ClipToBounds="True">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="MOTION" Classes="section-header"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Classes="pill" Name="SpinBtn" Content="Spin" MinWidth="50" Height="28" FontSize="11"/>
+                            <Button Classes="pill" Name="OrbitBtn" Content="Orbit" MinWidth="50" Height="28" FontSize="11"/>
+                        </StackPanel>
+                        <StackPanel Name="SpinSpeedRow" Orientation="Horizontal" Spacing="8" IsVisible="False" Margin="0,4,0,0">
+                            <TextBlock Text="Spin Speed" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Slider Name="SpinSpeedSlider" Minimum="1" Maximum="10" Value="5" Width="120" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                            <TextBlock Name="SpinSpeedValue" Text="5x" Foreground="{StaticResource TextPrimary}" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Name="SpinDirRow" Orientation="Horizontal" Spacing="8" IsVisible="False" Margin="0,4,0,0">
+                            <TextBlock Text="Spin Dir" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Button Classes="pill" Name="SpinDirBtn" Content="Normal" MinWidth="70" Height="26" FontSize="11"/>
+                        </StackPanel>
+                        <StackPanel Name="OrbitRow" Orientation="Horizontal" Spacing="8" IsVisible="False" Margin="0,4,0,0">
+                            <TextBlock Text="Orbit Radius" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Slider Name="OrbitRadiusSlider" Minimum="10" Maximum="300" Value="30" Width="120" TickFrequency="5" IsSnapToTickEnabled="True"/>
+                            <TextBlock Name="OrbitRadiusValue" Text="30" Foreground="{StaticResource TextPrimary}" FontSize="11" VerticalAlignment="Center" Width="24"/>
+                        </StackPanel>
+                        <StackPanel Name="OrbitSpeedRow" Orientation="Horizontal" Spacing="8" IsVisible="False" Margin="0,4,0,0">
+                            <TextBlock Text="Orbit Speed" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Slider Name="OrbitSpeedSlider" Minimum="1" Maximum="20" Value="5" Width="120" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                            <TextBlock Name="OrbitSpeedValue" Text="5x" Foreground="{StaticResource TextPrimary}" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Name="OrbitDirRow" Orientation="Horizontal" Spacing="8" IsVisible="False" Margin="0,4,0,0">
+                            <TextBlock Text="Orbit Dir" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Button Classes="pill" Name="OrbitDirBtn" Content="Normal" MinWidth="70" Height="26" FontSize="11"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Settings -->
+                <Border Classes="section" ClipToBounds="True">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="SETTINGS" Classes="section-header"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Overlay Bind" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Button Classes="pill" Name="BindInput" Content="F6" MinWidth="50" Height="28" FontSize="11"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Position X" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Slider Name="PosXSlider" Minimum="-500" Maximum="500" Value="0" Width="150" TickFrequency="1"/>
+                            <Border Background="#16161c" BorderBrush="#2a2a34" BorderThickness="1" CornerRadius="6" Height="26" Width="78">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                                    <TextBlock Text="X" Foreground="#7c5cfc" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBox Name="PosXValue" Text="0" FontSize="11" Width="42" Background="Transparent" BorderThickness="0" Padding="0" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Position Y" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Slider Name="PosYSlider" Minimum="-500" Maximum="500" Value="0" Width="150" TickFrequency="1"/>
+                            <Border Background="#16161c" BorderBrush="#2a2a34" BorderThickness="1" CornerRadius="6" Height="26" Width="78">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                                    <TextBlock Text="Y" Foreground="#7c5cfc" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBox Name="PosYValue" Text="0" FontSize="11" Width="42" Background="Transparent" BorderThickness="0" Padding="0" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="" Width="80"/>
+                            <Button Classes="pill" Name="CenterAllBtn" Content="Center All" Height="24" FontSize="11" MinWidth="72"/>
+                            <Button Classes="pill" Name="SaveCenterBtn" Content="Save" Height="24" FontSize="11" MinWidth="50"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Size" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Slider Name="SizeSlider" Minimum="4" Maximum="64" Value="16" Width="140" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                            <TextBlock Name="SizeValue" Text="16px" Foreground="{StaticResource TextPrimary}" FontSize="11" VerticalAlignment="Center" Width="36"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Thickness" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Slider Name="ThicknessSlider" Minimum="1" Maximum="8" Value="2" Width="140" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                            <TextBlock Name="ThicknessValue" Text="2px" Foreground="{StaticResource TextPrimary}" FontSize="11" VerticalAlignment="Center" Width="36"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Opacity" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Slider Name="OpacitySlider" Minimum="10" Maximum="100" Value="100" Width="140" TickFrequency="5" IsSnapToTickEnabled="True"/>
+                            <TextBlock Name="OpacityValue" Text="100%" Foreground="{StaticResource TextPrimary}" FontSize="11" VerticalAlignment="Center" Width="36"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Speed" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Slider Name="SpeedSlider" Minimum="1" Maximum="10" Value="5" Width="140" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                            <TextBlock Name="SpeedValue" Text="5x" Foreground="{StaticResource TextPrimary}" FontSize="11" VerticalAlignment="Center" Width="36"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Rotation" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <Slider Name="RotationSlider" Minimum="0" Maximum="360" Value="0" Width="140" TickFrequency="5" IsSnapToTickEnabled="True"/>
+                            <TextBlock Name="RotationValue" Text="0" Foreground="{StaticResource TextPrimary}" FontSize="11" VerticalAlignment="Center" Width="36"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Custom Import -->
+                <Border Classes="section" ClipToBounds="True">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="CUSTOM IMPORT" Classes="section-header"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Symbol" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
+                            <TextBox Name="SymbolInput" Text="+" MaxLength="2" Width="60" FontSize="14" HorizontalContentAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Configs -->
+                <Border Classes="section" ClipToBounds="True">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="CONFIGS" Classes="section-header" VerticalAlignment="Center"/>
+                            <Button Classes="pill" Name="SaveConfigBtn" Content="Save" MinWidth="50" Height="24" FontSize="10"/>
+                            <Button Classes="pill" Name="CopyConfigBtn" Content="Copy" MinWidth="50" Height="24" FontSize="10"/>
+                            <Button Classes="pill" Name="RefreshConfigsBtn" Content="Refresh" MinWidth="60" Height="24" FontSize="10"/>
+                        </StackPanel>
+                        <TextBlock Name="ConfigStatus" Text="" Foreground="{StaticResource GreenDefault}" FontSize="10" IsVisible="False"/>
+                        <WrapPanel Name="ConfigsGroup"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

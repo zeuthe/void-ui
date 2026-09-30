@@ -1,0 +1,112 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="VoidUI.Views.HomePage">
+    <UserControl.Styles>
+        <Style Selector="TextBlock.title-text">
+            <Setter Property="FontFamily" Value="avares://VoidUI/assets/Orbitron.ttf#Orbitron"/>
+            <Setter Property="FontWeight" Value="900"/>
+            <Setter Property="FontSize" Value="52"/>
+            <Setter Property="LetterSpacing" Value="6"/>
+        </Style>
+    </UserControl.Styles>
+    <Panel Name="Root" Background="Transparent">
+        <!-- Confetti layer (populated by code-behind) -->
+        <Canvas Name="ConfettiCanvas" IsHitTestVisible="False" ClipToBounds="True"/>
+
+        <!-- Content -->
+        <ScrollViewer Background="Transparent">
+            <StackPanel Spacing="0" MaxWidth="1100" HorizontalAlignment="Center" Margin="0,0,0,48">
+
+                <!-- ═══ HERO — donut half under top bar ═══ -->
+                <Panel Height="200" Margin="0,-60,0,20">
+                    <!-- Spinning donut — clipped by top bar area -->
+                    <Border Width="160" Height="160" CornerRadius="80" ClipToBounds="False"
+                            HorizontalAlignment="Center" VerticalAlignment="Top"
+                            BorderBrush="{StaticResource AccentDefault}" BorderThickness="3"
+                            Background="{StaticResource SurfaceBase}" Padding="8">
+                        <Border Width="144" Height="144" CornerRadius="72" ClipToBounds="True"
+                                Background="{StaticResource SurfaceMid}">
+                            <Image Name="DonutImage" Source="avares://VoidUI/assets/logo.ico" Width="144" Height="144"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="UniformToFill">
+                                <Image.RenderTransform>
+                                    <RotateTransform Angle="0"/>
+                                </Image.RenderTransform>
+                            </Image>
+                        </Border>
+                    </Border>
+
+                    <!-- Title -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                Spacing="16" Margin="0,0,0,30">
+                        <TextBlock Classes="title-text" Text="SWEETY"
+                                   Foreground="{StaticResource TextPrimary}"/>
+                        <TextBlock Classes="title-text" Text="VOID"
+                                   Foreground="{StaticResource AccentDefault}"/>
+                    </StackPanel>
+                </Panel>
+
+                <!-- ═══ TAGLINE ═══ -->
+                <StackPanel Spacing="6" HorizontalAlignment="Center" Margin="0,0,0,32">
+                    <TextBlock Text="RUST CONFIGURATION SUITE" FontSize="12" FontWeight="700"
+                               Foreground="{StaticResource TextTertiary}" HorizontalAlignment="Center"
+                               FontFamily="avares://VoidUI/assets/Orbitron.ttf#Orbitron"
+                               LetterSpacing="4" Margin="0,0,0,2"/>
+                    <TextBlock Text="Graphics presets, crosshair overlay, keybinds, combat analytics and more"
+                               FontSize="11.5" Foreground="{StaticResource TextDisabled}" HorizontalAlignment="Center"
+                               MaxWidth="460" TextWrapping="Wrap" TextAlignment="Center"/>
+                </StackPanel>
+
+                <!-- ═══ FEATURE CARDS ═══ -->
+                <WrapPanel HorizontalAlignment="Center" Margin="0,0,0,32">
+                    <Border Classes="card" Name="CardCrosshair" Width="170" Height="130" Margin="6">
+                        <StackPanel VerticalAlignment="Center" Spacing="6">
+                            <TextBlock Text="Crosshair" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                            <TextBlock Text="Overlay, presets, animation" FontSize="11" Foreground="{StaticResource TextTertiary}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="card" Name="CardGraphics" Width="170" Height="130" Margin="6">
+                        <StackPanel VerticalAlignment="Center" Spacing="6">
+                            <TextBlock Text="Graphics" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                            <TextBlock Text="Quality presets and tweaks" FontSize="11" Foreground="{StaticResource TextTertiary}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="card" Name="CardBinds" Width="170" Height="130" Margin="6">
+                        <StackPanel VerticalAlignment="Center" Spacing="6">
+                            <TextBlock Text="Binds" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                            <TextBlock Text="Keybind editor and hotkeys" FontSize="11" Foreground="{StaticResource TextTertiary}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="card" Name="CardHelpers" Width="170" Height="130" Margin="6">
+                        <StackPanel VerticalAlignment="Center" Spacing="6">
+                            <TextBlock Text="Helpers" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                            <TextBlock Text="Tools, maps, calculators" FontSize="11" Foreground="{StaticResource TextTertiary}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="card" Name="CardCombat" Width="170" Height="130" Margin="6">
+                        <StackPanel VerticalAlignment="Center" Spacing="6">
+                            <TextBlock Text="Combat" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                            <TextBlock Text="Server tracking and analytics" FontSize="11" Foreground="{StaticResource TextTertiary}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+
+                <!-- ═══ QUICK ACTIONS ═══ -->
+                <Border Classes="section" Margin="6,0">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="QUICK ACTIONS" Classes="section-header"/>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Classes="ghost" Name="GitHubBtn" Content="GitHub"/>
+                            <Button Classes="action" Name="DonateBtn" Content="Donate"/>
+                            <Button Classes="ghost" Name="SettingsBtn" Content="Settings"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Panel>
+</UserControl>

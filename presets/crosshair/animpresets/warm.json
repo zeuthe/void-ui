@@ -1,0 +1,8 @@
+{
+  "name": "Warm",
+  "description": "Warm tones - reds, oranges, yellows",
+  "speed": 5,
+  "palette": ["#ff0000", "#ff4400", "#ff8800", "#ffcc00", "#ffff00", "#ff6600"],
+  "type": "rainbow",
+  "params": { "colorCycle": true, "cycleSpeed": 3.0 }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Neon",
+  "description": "Neon glow - bright vivid colors",
+  "speed": 5,
+  "palette": ["#ff00ff", "#ff0088", "#00ffff", "#88ff00", "#ffff00", "#ff44ff"],
+  "type": "rainbow",
+  "params": { "colorCycle": true, "cycleSpeed": 3.0 }
+}

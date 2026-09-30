@@ -1,0 +1,8 @@
+{
+  "name": "Full",
+  "description": "Full rainbow spectrum - all hues",
+  "speed": 5,
+  "palette": ["#ff0000", "#ff8800", "#ffff00", "#00ff00", "#0088ff", "#0000ff", "#8800ff"],
+  "type": "rainbow",
+  "params": { "colorCycle": true, "cycleSpeed": 3.0 }
+}

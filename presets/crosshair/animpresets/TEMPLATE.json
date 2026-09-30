@@ -1,0 +1,23 @@
+{
+  "name": "My Custom Animation",
+  "description": "Description of your animation",
+  "speed": 5,
+  "palette": [
+    "#ff0000",
+    "#ff8800",
+    "#ffff00",
+    "#00ff00",
+    "#00ffff",
+    "#0000ff",
+    "#ff00ff"
+  ],
+  "type": "pulse",
+  "params": {
+    "scaleMin": 1.0,
+    "scaleMax": 1.2,
+    "opacityMin": 100,
+    "opacityMax": 100,
+    "colorCycle": true,
+    "cycleSpeed": 3.0
+  }
+}

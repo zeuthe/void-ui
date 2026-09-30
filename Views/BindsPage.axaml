@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="VoidUI.Views.BindsPage">
+    <Grid>
+        <!-- Page header (behind blur) -->
+        <Border Background="Transparent">
+            <StackPanel Spacing="4" Margin="24,20">
+                <TextBlock Text="BINDS" FontSize="20" FontWeight="800" Foreground="{StaticResource TextPrimary}"/>
+                <TextBlock Text="Key bindings" FontSize="12" Foreground="{StaticResource TextTertiary}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Overlay: hard blur on content + COMING SOON -->
+        <Grid Background="#9a0b0b0e" IsHitTestVisible="True">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+                <Border Background="#111114" BorderBrush="#2a2a34" BorderThickness="1"
+                        CornerRadius="14" Padding="28">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="COMING SOON" FontSize="18" FontWeight="800"
+                                   Foreground="#7c5cfc" HorizontalAlignment="Center"/>
+                        <TextBlock Text="This page is under construction" FontSize="11"
+                                   Foreground="#5c5c66" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

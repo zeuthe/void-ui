@@ -1,0 +1,19 @@
+{
+  "name": "Breathe Glow",
+  "description": "Slow breathing with glow opacity effect",
+  "speed": 3,
+  "palette": [
+    "#7c5cfc",
+    "#ff00ff",
+    "#ff0088"
+  ],
+  "type": "breathe",
+  "params": {
+    "scaleMin": 1.0,
+    "scaleMax": 1.3,
+    "opacityMin": 60,
+    "opacityMax": 100,
+    "colorCycle": true,
+    "cycleSpeed": 2.0
+  }
+}

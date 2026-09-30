@@ -1,0 +1,241 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="VoidUI.Installer.InstallerWindow"
+        Title="Sweety Void Setup"
+        Width="660" Height="520"
+        MinWidth="660" MinHeight="520"
+        WindowStartupLocation="CenterScreen"
+        Icon="avares://VoidUI.Setup/assets/logo.ico"
+        Background="Transparent"
+        SystemDecorations="None"
+        CanResize="False"
+        TransparencyLevelHint="AcrylicBlur"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1">
+
+    <Window.Styles>
+        <Style Selector="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="CornerRadius" Value="0"/>
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Button.action">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="24,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="700"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Background" Value="{StaticResource AccentDefault}"/>
+            <Setter Property="Foreground" Value="#ffffff"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.action:pointerover">
+            <Setter Property="Background" Value="{StaticResource AccentHover}"/>
+        </Style>
+        <Style Selector="Button.action:disabled">
+            <Setter Property="Background" Value="{StaticResource SurfaceOverlay}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextTertiary}"/>
+            <Setter Property="Cursor" Value="Arrow"/>
+        </Style>
+
+        <Style Selector="Button.ghost">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="600"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceMid}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderDefault}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ghost:pointerover">
+            <Setter Property="Background" Value="{StaticResource SurfaceHigh}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrong}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
+
+        <Style Selector="Button.winbtn">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Foreground" Value="{StaticResource TextTertiary}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.winbtn:pointerover">
+            <Setter Property="Foreground" Value="#ffffff"/>
+            <Setter Property="Background" Value="{StaticResource RedDefault}"/>
+        </Style>
+
+        <Style Selector="TextBlock.h1">
+            <Setter Property="FontSize" Value="21"/>
+            <Setter Property="FontWeight" Value="800"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
+        <Style Selector="TextBlock.sub">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Foreground" Value="{StaticResource TextTertiary}"/>
+        </Style>
+        <Style Selector="TextBlock.lbl">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="600"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+        </Style>
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="CheckBox:pointerover">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceLow}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderDefault}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="CaretBrush" Value="{StaticResource TextPrimary}"/>
+        </Style>
+        <Style Selector="TextBox:focus">
+            <Setter Property="BorderBrush" Value="{StaticResource AccentDefault}"/>
+        </Style>
+        <Style Selector="ProgressBar">
+            <Setter Property="Foreground" Value="{StaticResource AccentDefault}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceHigh}"/>
+            <Setter Property="Height" Value="10"/>
+        </Style>
+    </Window.Styles>
+
+    <Border Background="#f20c0c0e" BorderBrush="{StaticResource BorderDefault}" BorderThickness="1"
+            CornerRadius="16" ClipToBounds="True">
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+            <!-- Title bar -->
+            <Grid Grid.Row="0" Name="TitleBar" ColumnDefinitions="Auto,*,Auto"
+                  Height="52" Margin="18,0,10,0" Background="Transparent">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Image Source="avares://VoidUI.Setup/assets/logo.ico" Width="24" Height="24" Stretch="Uniform"/>
+                    <TextBlock Name="TitleText" Text="Sweety Void Setup" FontSize="12.5" FontWeight="600"
+                               Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Grid.Column="2" Name="CloseBtn" Classes="winbtn" Content="✕"/>
+            </Grid>
+
+            <!-- Accent line -->
+            <Border Grid.Row="1" Height="1.5" HorizontalAlignment="Stretch" Opacity="0.85">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                        <GradientStop Color="Transparent" Offset="0"/>
+                        <GradientStop Color="#553cc0" Offset="0.2"/>
+                        <GradientStop Color="#9178ff" Offset="0.5"/>
+                        <GradientStop Color="#553cc0" Offset="0.8"/>
+                        <GradientStop Color="Transparent" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <!-- Pages -->
+            <Panel Grid.Row="2" Margin="32,24,32,8">
+
+                <!-- Welcome -->
+                <StackPanel Name="PageWelcome" Spacing="14">
+                    <TextBlock Text="Install Sweety Void" Classes="h1"/>
+                    <TextBlock Classes="sub" TextWrapping="Wrap"
+                               Text="This wizard will install the Sweety Void configuration tool on this computer. Click Next to continue."/>
+                    <Border Height="1" Background="{StaticResource BorderSubtle}" Margin="0,4"/>
+                    <TextBlock Classes="sub" TextWrapping="Wrap"
+                               Text="Installed components: the Sweety Void application, the shortcuts you select, and an uninstaller. The installation is per-user and does not require administrator rights."/>
+                    <TextBlock Classes="sub" Margin="0,8,0,0"
+                               Text="Version 1.0.0  ·  .NET 8 + Avalonia UI"/>
+                </StackPanel>
+
+                <!-- License -->
+                <StackPanel Name="PageLicense" Spacing="12" IsVisible="False">
+                    <TextBlock Text="License Agreement" Classes="h1"/>
+                    <Border Background="{StaticResource SurfaceLow}" BorderBrush="{StaticResource BorderSubtle}"
+                            BorderThickness="1" CornerRadius="12" Padding="16" Height="192">
+                        <ScrollViewer>
+                            <TextBlock Name="LicenseText" Foreground="{StaticResource TextSecondary}" FontSize="11.5"
+                                       TextWrapping="Wrap" LineHeight="18"/>
+                        </ScrollViewer>
+                    </Border>
+                    <StackPanel Spacing="8">
+                        <CheckBox Name="AcceptLicenseCheck"
+                                  Content="I have read and accept the MIT License terms."/>
+                        <CheckBox Name="AcceptThirdPartyCheck"
+                                  Content="I understand this app bundles third-party open-source components (Avalonia UI, .NET) under their own licenses."/>
+                        <CheckBox Name="AcceptRiskCheck"
+                                  Content="I accept the software is provided &quot;as is&quot; and the author is not liable for any damage or bans."/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Install path -->
+                <StackPanel Name="PagePath" Spacing="14" IsVisible="False">
+                    <TextBlock Text="Choose install location" Classes="h1"/>
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="INSTALL LOCATION" Classes="lbl"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox Grid.Column="0" Name="PathBox"/>
+                            <Button Grid.Column="1" Name="BrowseBtn" Classes="ghost" Content="Browse..." Margin="10,0,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                    <StackPanel Spacing="9">
+                        <TextBlock Text="SHORTCUTS" Classes="lbl"/>
+                        <CheckBox Name="DesktopCheck" Content="Create a shortcut on the Desktop" IsChecked="True"/>
+                        <CheckBox Name="StartMenuCheck" Content="Create a shortcut in the Start Menu" IsChecked="True"/>
+                        <CheckBox Name="PinTaskbarCheck" Content="Pin to the taskbar" IsChecked="True"/>
+                    </StackPanel>
+                    <TextBlock Name="SpaceText" Classes="sub" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Progress -->
+                <StackPanel Name="PageProgress" Spacing="18" IsVisible="False" VerticalAlignment="Center">
+                    <TextBlock Name="ProgressTitle" Text="Installing..." Classes="h1"/>
+                    <StackPanel Spacing="10">
+                        <ProgressBar Name="Progress" Minimum="0" Maximum="100" Value="0"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Name="ProgressDetail" Grid.Column="0" Classes="sub" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Name="ProgressPercent" Grid.Column="1" Classes="lbl"/>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Finish -->
+                <StackPanel Name="PageFinish" Spacing="16" IsVisible="False">
+                    <TextBlock Name="FinishTitle" Text="Installation complete" Classes="h1"/>
+                    <TextBlock Name="FinishText" Classes="sub" TextWrapping="Wrap"
+                               Text="Sweety Void has been installed on this computer."/>
+                    <CheckBox Name="LaunchCheck" Content="Launch Sweety Void when I click Finish" IsChecked="True"/>
+                </StackPanel>
+
+            </Panel>
+
+            <!-- Footer -->
+            <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="32,10,32,24">
+                <TextBlock Name="FooterStatus" Grid.Column="0" Classes="sub" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button Name="BackBtn" Classes="ghost" Content="Back" IsVisible="False"/>
+                    <Button Name="NextBtn" Classes="action" Content="Next" MinWidth="120"/>
+                    <Button Name="CancelBtn" Classes="ghost" Content="Cancel"/>
+                </StackPanel>
+            </Grid>
+
+        </Grid>
+    </Border>
+</Window>

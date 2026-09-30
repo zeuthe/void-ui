@@ -1,0 +1,8 @@
+{
+  "name": "Pastel",
+  "description": "Soft pastel tones",
+  "speed": 5,
+  "palette": ["#ffcccc", "#ffccaa", "#ffffcc", "#ccffcc", "#ccffff", "#ccccff"],
+  "type": "rainbow",
+  "params": { "colorCycle": true, "cycleSpeed": 3.0 }
+}

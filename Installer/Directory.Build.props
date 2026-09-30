@@ -1,0 +1,13 @@
+<Project>
+
+  <!--
+    The repo root Directory.Build.props redirects obj/ into the app's folder.
+    For the installer we keep our own intermediate/output on the C: drive
+    because D: is low on free space.
+  -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>C:\Users\celwi\AppData\Local\Temp\opencode\voidui-installer\obj\</BaseIntermediateOutputPath>
+    <OutputPath>C:\Users\celwi\AppData\Local\Temp\opencode\voidui-installer\bin\</OutputPath>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="VoidUI.Views.SettingsPage">
+    <ScrollViewer Background="Transparent" Padding="24,20">
+        <StackPanel Spacing="20" MaxWidth="1000">
+
+            <!-- Page header -->
+            <StackPanel Spacing="4" Margin="0,0,0,4">
+                <TextBlock Text="SETTINGS" FontSize="20" FontWeight="800" Foreground="{StaticResource TextPrimary}"/>
+                <TextBlock Text="Appearance, overlay and data management" FontSize="12" Foreground="{StaticResource TextTertiary}"/>
+            </StackPanel>
+
+            <!-- Theme -->
+            <Border Classes="section">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="APPEARANCE" Classes="section-header"/>
+                    <TextBlock Text="Theme" Foreground="{StaticResource TextSecondary}" FontSize="12" Margin="0,0,0,4"/>
+                    <WrapPanel Name="ThemeWrap" Orientation="Horizontal"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Data -->
+            <Border Classes="section">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="DATA" Classes="section-header"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Classes="action" Name="ResetAllBtn" Content="Reset All" Height="34" Padding="16,0"/>
+                        <Button Classes="ghost" Name="OpenFolderBtn" Content="Open Folder"/>
+                        <Button Classes="ghost" Name="ExportBtn" Content="Export Config"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- About -->
+            <Border Classes="section">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="ABOUT" Classes="section-header"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,4,0,0">
+                        <TextBlock Text="Sweety Void" FontSize="16" FontWeight="700" Foreground="{StaticResource TextPrimary}"/>
+                        <Border Background="{StaticResource AccentSubtle}" CornerRadius="6" Padding="8,2">
+                            <TextBlock Text="v1.0.0" FontSize="10" FontWeight="600" Foreground="{StaticResource AccentDefault}"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text=".NET 8 + Avalonia UI" Foreground="{StaticResource TextTertiary}" FontSize="11"/>
+                    <TextBlock Text="A comprehensive Rust configuration tool with graphics presets, crosshair overlay, keybind management, and combat analytics."
+                               Foreground="{StaticResource TextTertiary}" FontSize="11" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Height="24"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

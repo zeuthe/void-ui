@@ -1,0 +1,8 @@
+{
+  "name": "Cool",
+  "description": "Cool tones - blues, cyans",
+  "speed": 5,
+  "palette": ["#0044ff", "#0088ff", "#00ccff", "#00ffff", "#0088cc", "#0044aa"],
+  "type": "rainbow",
+  "params": { "colorCycle": true, "cycleSpeed": 3.0 }
+}

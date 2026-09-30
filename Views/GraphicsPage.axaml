@@ -1,0 +1,233 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="VoidUI.Views.GraphicsPage"
+             HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Grid>
+        <Border>
+            <Border.Effect>
+                <BlurEffect Radius="18"/>
+            </Border.Effect>
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="*">
+
+        <!-- Left: scrollable settings -->
+        <ScrollViewer Grid.Column="0" Grid.Row="0" Background="Transparent" Padding="24,20">
+            <StackPanel Spacing="20" MaxWidth="700">
+
+                <!-- Page header -->
+                <StackPanel Spacing="4" Margin="0,0,0,4">
+                    <TextBlock Text="GRAPHICS" FontSize="20" FontWeight="800" Foreground="{StaticResource TextPrimary}"/>
+                    <TextBlock Text="Visual quality presets and performance tweaks" FontSize="12" Foreground="{StaticResource TextTertiary}"/>
+                </StackPanel>
+
+                <!-- Quality Presets -->
+                <Border Classes="section">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="QUALITY PRESETS" Classes="section-header"/>
+                        <TextBlock Text="One-click optimization for your system" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,0,0,4"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Classes="pill" Name="PresetLow" Content="Potato" Tag="low" MinWidth="80"/>
+                            <Button Classes="pill" Name="PresetMedium" Content="Balanced" Tag="medium" MinWidth="80"/>
+                            <Button Classes="pill" Name="PresetHigh" Content="High" Tag="high" MinWidth="80"/>
+                            <Button Classes="pill" Name="PresetUltra" Content="Ultra" Tag="ultra" MinWidth="80"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Rendering -->
+                <Border Classes="section">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="RENDERING" Classes="section-header"/>
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Shadow Quality" Classes="field-label"/>
+                                <TextBlock Text="Shadow resolution and quality level" Classes="field-desc"/>
+                            </StackPanel>
+                            <StackPanel Name="ShadowsGroup" Orientation="Horizontal" Spacing="4"/>
+                        </StackPanel>
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Texture Quality" Classes="field-label"/>
+                                <TextBlock Text="Surface detail and material quality" Classes="field-desc"/>
+                            </StackPanel>
+                            <StackPanel Name="TexturesGroup" Orientation="Horizontal" Spacing="4"/>
+                        </StackPanel>
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Lighting Quality" Classes="field-label"/>
+                                <TextBlock Text="Dynamic lighting and shadow accuracy" Classes="field-desc"/>
+                            </StackPanel>
+                            <StackPanel Name="LightingGroup" Orientation="Horizontal" Spacing="4"/>
+                        </StackPanel>
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Tree Quality" Classes="field-label"/>
+                                <TextBlock Text="Tree detail level and rendering" Classes="field-desc"/>
+                            </StackPanel>
+                            <StackPanel Name="TreeGroup" Orientation="Horizontal" Spacing="4"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Environment -->
+                <Border Classes="section">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="ENVIRONMENT" Classes="section-header"/>
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Grass Quality" Classes="field-label"/>
+                                <TextBlock Text="Vegetation density and rendering distance" Classes="field-desc"/>
+                            </StackPanel>
+                            <StackPanel Name="GrassGroup" Orientation="Horizontal" Spacing="4"/>
+                        </StackPanel>
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Cloud Quality" Classes="field-label"/>
+                                <TextBlock Text="Sky rendering and cloud detail" Classes="field-desc"/>
+                            </StackPanel>
+                            <StackPanel Name="CloudsGroup" Orientation="Horizontal" Spacing="4"/>
+                        </StackPanel>
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Water Reflections" Classes="field-label"/>
+                                <TextBlock Text="Water surface rendering and reflections" Classes="field-desc"/>
+                            </StackPanel>
+                            <StackPanel Name="WaterGroup" Orientation="Horizontal" Spacing="4"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Post-Processing -->
+                <Border Classes="section">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="POST-PROCESSING" Classes="section-header"/>
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Anti-aliasing" Classes="field-label"/>
+                                <TextBlock Text="Smooth edges and reduce jaggies" Classes="field-desc"/>
+                            </StackPanel>
+                            <StackPanel Name="AAGroup" Orientation="Horizontal" Spacing="4"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Sliders -->
+                <Border Classes="section">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="SLIDERS" Classes="section-header"/>
+                        <StackPanel Spacing="14">
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Brightness" Classes="field-label"/>
+                                    <TextBlock Name="BrightnessVal" Text="100%" FontSize="11" FontWeight="600"
+                                               Foreground="{StaticResource AccentDefault}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <TextBlock Text="Overall screen brightness" Classes="field-desc"/>
+                                <Slider Name="BrightnessSlider" Minimum="50" Maximum="150" Value="100"
+                                        HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Contrast" Classes="field-label"/>
+                                    <TextBlock Name="ContrastVal" Text="100%" FontSize="11" FontWeight="600"
+                                               Foreground="{StaticResource AccentDefault}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <TextBlock Text="Difference between light and dark areas" Classes="field-desc"/>
+                                <Slider Name="ContrastSlider" Minimum="50" Maximum="150" Value="100"
+                                        HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Saturation" Classes="field-label"/>
+                                    <TextBlock Name="SaturationVal" Text="100%" FontSize="11" FontWeight="600"
+                                               Foreground="{StaticResource AccentDefault}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <TextBlock Text="Color intensity and vividness" Classes="field-desc"/>
+                                <Slider Name="SaturationSlider" Minimum="0" Maximum="200" Value="100"
+                                        HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="FOV" Classes="field-label"/>
+                                    <TextBlock Name="FOVVal" Text="90" FontSize="11" FontWeight="600"
+                                               Foreground="{StaticResource AccentDefault}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <TextBlock Text="Field of view in degrees" Classes="field-desc"/>
+                                <Slider Name="FOVSlider" Minimum="60" Maximum="120" Value="90"
+                                        HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Render Scale" Classes="field-label"/>
+                                    <TextBlock Name="RenderScaleVal" Text="100%" FontSize="11" FontWeight="600"
+                                               Foreground="{StaticResource AccentDefault}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <TextBlock Text="Internal rendering resolution scale" Classes="field-desc"/>
+                                <Slider Name="RenderScaleSlider" Minimum="50" Maximum="200" Value="100"
+                                        HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Performance Tweaks -->
+                <Border Classes="section">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="PERFORMANCE TWEAKS" Classes="section-header"/>
+                        <TextBlock Text="Performance" Foreground="{StaticResource TextTertiary}" FontSize="10" FontWeight="600" Margin="0,2,0,0"/>
+                        <StackPanel Name="TweaksPerformance" Spacing="4"/>
+                        <TextBlock Text="Interface" Foreground="{StaticResource TextTertiary}" FontSize="10" FontWeight="600" Margin="0,6,0,0"/>
+                        <StackPanel Name="TweaksInterface" Spacing="4"/>
+                        <TextBlock Text="Additional" Foreground="{StaticResource TextTertiary}" FontSize="10" FontWeight="600" Margin="0,6,0,0"/>
+                        <StackPanel Name="TweaksAdditional" Spacing="4"/>
+                        <TextBlock Text="System" Foreground="{StaticResource TextTertiary}" FontSize="10" FontWeight="600" Margin="0,6,0,0"/>
+                        <StackPanel Name="TweaksSystem" Spacing="4"/>
+                        <TextBlock Text="Gameplay" Foreground="{StaticResource TextTertiary}" FontSize="10" FontWeight="600" Margin="0,6,0,0"/>
+                        <StackPanel Name="TweaksGameplay" Spacing="4"/>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,24">
+                    <Button Classes="action" Name="SaveBtn" Content="Save Settings"/>
+                    <Button Classes="ghost" Name="RestoreBtn" Content="Restore Backup"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Right: fixed preview panel — full height -->
+        <Border Grid.Column="1" Grid.Row="0" Width="300" Background="{StaticResource SurfaceLow}"
+                BorderBrush="{StaticResource BorderSubtle}" BorderThickness="1"
+                CornerRadius="16" Margin="0,20,24,20" Padding="16"
+                VerticalAlignment="Stretch">
+            <Grid RowDefinitions="Auto,*,Auto">
+                <TextBlock Grid.Row="0" Text="PREVIEW" FontSize="10" FontWeight="700"
+                           Foreground="{StaticResource TextTertiary}"/>
+                <Border Grid.Row="1" Background="{StaticResource SurfaceMid}" CornerRadius="12"
+                        ClipToBounds="True" Margin="0,8,0,0">
+                    <Image Name="PreviewImage" Source="avares://VoidUI/assets/preview-graphics.png"
+                           Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Row="2" Text="Current graphics settings preview"
+                           FontSize="11" Foreground="{StaticResource TextDisabled}"
+                           TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0"/>
+            </Grid>
+        </Border>
+
+    </Grid>
+        </Border>
+
+        <!-- Overlay: COMING SOON -->
+        <Grid Background="#9a0b0b0e" IsHitTestVisible="True">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+                <Border Background="#111114" BorderBrush="#2a2a34" BorderThickness="1"
+                        CornerRadius="14" Padding="28">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="COMING SOON" FontSize="18" FontWeight="800"
+                                   Foreground="#7c5cfc" HorizontalAlignment="Center"/>
+                        <TextBlock Text="This page is under construction" FontSize="11"
+                                   Foreground="#5c5c66" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>
