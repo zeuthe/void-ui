@@ -49,10 +49,16 @@ if (-not $SkipApp) {
         -p:OutputPath="$temp\voidui-app-bin\" `
         -o $appPub
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish (app) failed" }
+    # The build disk is nearly full: drop intermediates right after publish.
+    foreach ($d in @($tempObj, $tempBin)) {
+        if (Test-Path $d) { Remove-Item $d -Recurse -Force -ErrorAction SilentlyContinue }
+    }
 
     Write-Host "[2/3] Packing payload.zip..." -ForegroundColor Yellow
     if (Test-Path $payload) { Remove-Item $payload -Force }
     Compress-Archive -Path (Join-Path $appPub "*") -DestinationPath $payload -CompressionLevel Optimal
+    # Payload is packed; the publish dir is no longer needed either.
+    if (Test-Path $appPub) { Remove-Item $appPub -Recurse -Force -ErrorAction SilentlyContinue }
 }
 elseif (-not (Test-Path $payload)) {
     throw "payload.zip not found at $payload - run without -SkipApp first"

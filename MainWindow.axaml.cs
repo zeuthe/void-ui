@@ -26,6 +26,14 @@ public partial class MainWindow : Window
     private System.Threading.Thread? _overlayThread;
     private System.Threading.ManualResetEventSlim? _overlayReady;
     private System.Timers.Timer? _themeWatcher;
+    private Avalonia.Threading.DispatcherTimer? _statusTimer;
+    private int _statusTick;
+    private string _workingFile = "output_log.txt";
+    private bool _rustPathExpanded;
+    private string? _rustFullPath;
+    private bool _targetOk;
+    private bool _rustMissing;
+    private bool _workStarted;     // открыты binds/graphics или запущен парс
 
     public MainWindow()
     {
@@ -43,7 +51,7 @@ public partial class MainWindow : Window
         WireTabButtons();
         WireControlButtons();
         WireSearch();
-        DetectSteam();
+        StartStatusBar();
         ApplyTheme(_settings.GetSettings().Theme ?? "black");
         NavigateTo("home");
         StartOverlay();
@@ -197,7 +205,7 @@ public partial class MainWindow : Window
             new("Cross preset", "Crosshair preset", "preset", "cross"),
             new("Circle preset", "Crosshair preset", "preset", "circle"),
             new("Bracket preset", "Crosshair preset", "preset", "bracket"),
-            new("Tactical preset", "Crosshair preset", "preset", "tactical"),
+            
             new("Custom preset", "Crosshair preset", "preset", "custom"),
 
             new("Black theme", "Theme", "theme", "black"),
@@ -302,6 +310,18 @@ public partial class MainWindow : Window
         };
         content.Content = page;
         SetStatus($"Page: {pageName}");
+
+        // Первая «работа»: открыли binds или graphics — ready уходит
+        if (pageName is "binds" or "graphics")
+            _workStarted = true;
+
+        // В баре показываем файл, с которым идёт работа на этой странице
+        SetWorkingFile(pageName switch
+        {
+            "binds" => "cfg/keys.txt",
+            "graphics" => "cfg/client.txt",
+            _ => "output_log.txt"
+        });
     }
 
     #endregion
@@ -377,14 +397,210 @@ public partial class MainWindow : Window
 
     #region Steam / Overlay
 
-    private void DetectSteam()
+    /// <summary>Нижний бар: анимация точек + периодическая проверка rust/лога.</summary>
+    private void StartStatusBar()
+    {
+        RefreshRustStatus();
+
+        _statusTimer = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+        _statusTimer.Tick += (_, _) =>
+        {
+            _statusTick++;
+            // Ловим старт парса в комбате (Run/Auto) — ready сразу уходит в работу
+            if (!_workStarted && _combatService.IsMonitoring)
+            {
+                _workStarted = true;
+                RefreshRustStatus();
+            }
+            if (_statusTick % 25 == 0) RefreshRustStatus();   // раз в ~10 секунд
+
+            var dots = this.FindControl<TextBlock>("StatusDots");
+            if (dots == null || _rustMissing) return;   // rust не найден — анимация скрыта
+            if (_workStarted && _targetOk)
+            {
+                // Работаем: точки появляются и пропадают, строка всегда 3 символа.
+                dots.Text = (_statusTick % 8) switch
+                {
+                    1 => ".  ",
+                    2 => ".. ",
+                    3 => "...",
+                    4 => "...",
+                    5 => ".. ",
+                    6 => ".  ",
+                    _ => "   "
+                };
+            }
+            else
+            {
+                // Простой: вместо точек милый смайл, символы меняются по кругу (тоже 3 символа).
+                dots.Text = (_statusTick % 4) switch
+                {
+                    0 => "^~^",
+                    1 => "^o^",
+                    2 => "^_^",
+                    _ => "^-^"
+                };
+            }
+        };
+        _statusTimer.Start();
+    }
+
+    private void RefreshRustStatus()
     {
         try
         {
-            var result = _steamService.DetectSteam();
-            SetStatus(result.Success ? $"Rust found: {Path.GetFileName(result.RustPath)}" : "Rust not detected");
+            var det = _steamService.DetectSteam();
+            bool found = det.Success && !string.IsNullOrEmpty(det.RustPath);
+            var logPath = _steamService.GetRustLogPath();
+            _rustFullPath = found ? det.RustPath : null;
+            if (!found) _rustPathExpanded = false;
+            _rustMissing = !found;
+
+            // Центр прячем, когда раста нет: сообщение живёт слева, без дублей.
+            var rustText = this.FindControl<TextBlock>("RustStatusText");
+            if (rustText != null)
+            {
+                rustText.IsVisible = found;
+                rustText.Text = _rustPathExpanded ? _rustFullPath!
+                    : $"rust in {AbbrevPath(_rustFullPath)}";
+            }
+
+            var rustDot = this.FindControl<Border>("RustStatusDot");
+            if (rustDot != null)
+            {
+                rustDot.IsVisible = found;
+                rustDot.Background = new SolidColorBrush(Color.Parse("#22c55e"));
+            }
+
+            // Файл, над которым идёт работа: показываем как есть (в т.ч. .txt),
+            // а существование проверяем по реальному файлу игры (.cfg в папке cfg).
+            string? relReal = _workingFile switch
+            {
+                "cfg/keys.txt" => "cfg/keys.cfg",
+                "cfg/client.txt" => "cfg/client.cfg",
+                _ => _workingFile
+            };
+            string? targetPath = relReal == "output_log.txt"
+                ? logPath
+                : found ? Path.Combine(det.RustPath, relReal.Replace('/', Path.DirectorySeparatorChar)) : null;
+            _targetOk = targetPath != null && File.Exists(targetPath);
+
+            var dotsUi = this.FindControl<TextBlock>("StatusDots");
+            var fileLabel = this.FindControl<TextBlock>("StatusFileLabel");
+            var fileDot = this.FindControl<Border>("StatusFileDot");
+            var filePath = this.FindControl<TextBlock>("StatusFilePath");
+
+            if (!found)
+            {
+                // Rust не найден: только красный кружок и эта строка — и больше ничего.
+                if (fileLabel != null)
+                {
+                    fileLabel.Text = "rust dont found :(";
+                    fileLabel.IsVisible = true;
+                }
+                if (fileDot != null)
+                {
+                    fileDot.Background = new SolidColorBrush(Color.Parse("#ef4444"));
+                    fileDot.IsVisible = true;
+                }
+                if (dotsUi != null) dotsUi.IsVisible = false;
+                if (filePath != null)
+                {
+                    filePath.IsVisible = false;
+                    filePath.Text = "";
+                }
+            }
+            else if (!_workStarted)
+            {
+                // Ещё ничего не начато: ready — жёлтый кружок и смайл, файла пока нет.
+                if (fileLabel != null)
+                {
+                    fileLabel.Text = "ready";
+                    fileLabel.IsVisible = true;
+                }
+                if (fileDot != null)
+                {
+                    fileDot.Background = new SolidColorBrush(Color.Parse("#facc15"));
+                    fileDot.IsVisible = true;
+                }
+                if (dotsUi != null) dotsUi.IsVisible = true;   // здесь крутится ^~^
+                if (filePath != null)
+                {
+                    filePath.IsVisible = false;
+                    filePath.Text = "";
+                }
+            }
+            else
+            {
+                if (fileLabel != null)
+                {
+                    fileLabel.Text = _targetOk ? "working" : "waiting";
+                    fileLabel.IsVisible = true;
+                }
+                if (fileDot != null)
+                {
+                    // зелёный — работаем; жёлтый — простой (файла нет)
+                    fileDot.Background = new SolidColorBrush(Color.Parse(_targetOk ? "#22c55e" : "#facc15"));
+                    fileDot.IsVisible = true;
+                }
+                if (dotsUi != null) dotsUi.IsVisible = true;
+                if (filePath != null)
+                {
+                    filePath.IsVisible = true;
+                    filePath.Text = $"with {_workingFile} on rust directory";
+                }
+            }
         }
-        catch (Exception ex) { SetStatus($"Steam detect error: {ex.Message}"); }
+        catch { }
+    }
+
+    /// <summary>
+    /// Путь в виде ..../..../..../Rust/output_log.txt:
+    /// родительские папки заменяются группами точек (максимум 3),
+    /// а хвост — папка игры и файл — остаётся настоящим.
+    /// </summary>
+    private static string AbbrevPath(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return "";
+        var segs = path.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+        if (segs.Length == 0) return path;
+
+        // отрезаем от папки игры (Rust), иначе — последние два сегмента
+        int keepFrom = -1;
+        for (int i = segs.Length - 1; i >= 0; i--)
+            if (segs[i].Equals("rust", StringComparison.OrdinalIgnoreCase)) { keepFrom = i; break; }
+        if (keepFrom < 0)
+            for (int i = segs.Length - 1; i >= 0; i--)
+                if (segs[i].IndexOf("rust", StringComparison.OrdinalIgnoreCase) >= 0) { keepFrom = i; break; }
+        if (keepFrom < 0) keepFrom = Math.Max(0, segs.Length - 2);
+
+        var sb = new System.Text.StringBuilder();
+        int groups = Math.Min(keepFrom, 3);
+        for (int i = 0; i < groups; i++) sb.Append("..../");
+        for (int i = keepFrom; i < segs.Length; i++)
+        {
+            sb.Append(segs[i]);
+            if (i < segs.Length - 1) sb.Append("/");
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>Переключает файл, над которым работаем (вызывается при смене страницы).</summary>
+    private void SetWorkingFile(string file)
+    {
+        if (_workingFile != file) _rustPathExpanded = false;
+        _workingFile = file;
+        RefreshRustStatus();   // обновляем всегда: мог сработать триггер ready → работа
+    }
+
+    /// <summary>Клик по rust-статусу: ..../..../Rust ⇄ полный путь.</summary>
+    private void OnRustStatusClick(object? sender, PointerPressedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_rustFullPath)) return;
+        _rustPathExpanded = !_rustPathExpanded;
+        var tb = this.FindControl<TextBlock>("RustStatusText");
+        if (tb != null)
+            tb.Text = _rustPathExpanded ? _rustFullPath! : $"rust in {AbbrevPath(_rustFullPath)}";
     }
 
     private void StartOverlay()
@@ -425,6 +641,8 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(WindowClosingEventArgs e)
     {
+        _statusTimer?.Stop();
+        _statusTimer = null;
         base.OnClosing(e);
     }
 
@@ -449,17 +667,8 @@ public partial class MainWindow : Window
     {
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            try
-            {
-                var grid = this.FindControl<Grid>("PageContent")?.Parent as Grid;
-                if (grid == null) return;
-                var statusBar = grid.Children.OfType<Border>().LastOrDefault();
-                var innerGrid = statusBar?.Child as Grid;
-                var sp = innerGrid?.Children.OfType<StackPanel>().FirstOrDefault();
-                var tb = sp?.Children.OfType<TextBlock>().LastOrDefault();
-                if (tb != null) tb.Text = text;
-            }
-            catch { }
+            var tb = this.FindControl<TextBlock>("BarStatusText");
+            if (tb != null) tb.Text = text;
         });
     }
 

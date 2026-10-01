@@ -9,7 +9,7 @@ namespace VoidUI.Models
         public bool SpinEnabled { get; set; }
         public bool OrbitEnabled { get; set; }
         public int Size { get; set; } = 16;
-        public int Thickness { get; set; } = 2;
+        public double Thickness { get; set; } = 3;
         public int Opacity { get; set; } = 100;
         public string Color { get; set; } = "#22c55e";
         public int Speed { get; set; } = 5;

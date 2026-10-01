@@ -292,6 +292,19 @@
                                 VerticalAlignment="Center"
                                 CornerRadius="4"
                                 Background="#26262e"/>
+                        <!-- tick marks: shown only for sliders with Classes=ticks -->
+                        <TickBar Name="TickMarks"
+                                 Ticks="{TemplateBinding Ticks}"
+                                 TickFrequency="{TemplateBinding Slider.TickFrequency}"
+                                 Orientation="Horizontal"
+                                 Minimum="{TemplateBinding Minimum}"
+                                 Maximum="{TemplateBinding Maximum}"
+                                 Placement="Bottom"
+                                 Height="5"
+                                 Margin="10,0,10,3"
+                                 VerticalAlignment="Bottom"
+                                 Fill="#55556a"
+                                 IsVisible="False"/>
                         <Track Name="PART_Track"
                                Minimum="{TemplateBinding Minimum}"
                                Maximum="{TemplateBinding Maximum}"
@@ -363,6 +376,9 @@
         </Style>
 
         <!-- M3: handle fattens on hover, handle-elevation glow -->
+        <Style Selector="Slider.ticks /template/ TickBar#TickMarks">
+            <Setter Property="IsVisible" Value="True"/>
+        </Style>
         <Style Selector="Slider:horizontal:pointerover /template/ Thumb#SliderThumb">
             <Setter Property="Width" Value="10"/>
         </Style>
@@ -498,13 +514,44 @@
             <!-- ═══ STATUS BAR ═══ -->
             <Border Grid.Row="2" Background="{StaticResource SurfaceBase}"
                     BorderBrush="{StaticResource BorderSubtle}" BorderThickness="0,1,0,0">
-                <Grid Margin="16,0">
-                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <Border Width="6" Height="6" CornerRadius="3" Background="{StaticResource GreenDefault}"
-                                Margin="0,0,2,0"/>
-                        <TextBlock Text="Ready" Foreground="{StaticResource TextTertiary}" FontSize="11"
-                                   VerticalAlignment="Center"/>
+                <Grid Margin="16,0" ColumnDefinitions="*,Auto,*">
+
+                    <!-- слева: какой файл парсится -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+                                ClipToBounds="True">
+                        <Border Name="StatusFileDot" Width="6" Height="6" CornerRadius="3"
+                                Background="{StaticResource TextTertiary}" Margin="0,0,2,0"/>
+                        <TextBlock Name="StatusFileLabel" Text="waiting" Foreground="{StaticResource TextSecondary}"
+                                   FontSize="11" VerticalAlignment="Center"/>
+                        <!-- 3 символа всегда: точки появляются/пропадают, ширина не меняется -->
+                        <TextBlock Name="StatusDots" Text="   " Width="24" TextAlignment="Left"
+                                   Foreground="{StaticResource TextSecondary}" FontSize="11"
+                                   FontFamily="Cascadia Code, Consolas, monospace" VerticalAlignment="Center"/>
+                        <TextBlock Name="StatusFilePath" Text="with output_log.txt on rust directory"
+                                   Foreground="{StaticResource TextTertiary}" FontSize="11"
+                                   FontFamily="Cascadia Code, Consolas, monospace" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" MaxWidth="300"/>
                     </StackPanel>
+
+                    <!-- по центру: найден ли rust -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                                VerticalAlignment="Center" HorizontalAlignment="Center"
+                                ClipToBounds="True">
+                        <Border Name="RustStatusDot" Width="6" Height="6" CornerRadius="3"
+                                Background="{StaticResource TextTertiary}" Margin="0,0,2,0"/>
+                        <TextBlock Name="RustStatusText" Text="rust dont found"
+                                   Foreground="{StaticResource TextTertiary}" FontSize="11"
+                                   FontFamily="Cascadia Code, Consolas, monospace" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" MaxWidth="430"
+                                   Background="Transparent"
+                                   Cursor="Hand" PointerPressed="OnRustStatusClick"
+                                   ToolTip.Tip="Click: full rust path"/>
+                    </StackPanel>
+
+                    <!-- справа: краткие статусные сообщения -->
+                    <TextBlock Grid.Column="2" Name="BarStatusText" Text="Ready"
+                               Foreground="{StaticResource TextTertiary}" FontSize="11"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
                 </Grid>
             </Border>
         </Grid>

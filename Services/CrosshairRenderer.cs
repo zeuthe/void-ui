@@ -33,6 +33,7 @@ namespace VoidUI.Services
             _canvas.RenderTransform = null;
             _rainbowBrushes.Clear();
 
+
             double canvasW = _canvas.ActualWidth > 0 ? _canvas.ActualWidth : SystemParameters.PrimaryScreenWidth;
             double canvasH = _canvas.ActualHeight > 0 ? _canvas.ActualHeight : SystemParameters.PrimaryScreenHeight;
             double cx = canvasW / 2.0 + state.PosX;
@@ -44,7 +45,7 @@ namespace VoidUI.Services
                 "cross" => CreateCross(state),
                 "circle" => CreateCircle(state),
                 "bracket" => CreateBracket(state),
-                "tactical" => CreateTactical(state),
+
                 "symbol" => CreateSymbol(state),
                 "custom" => CreateSymbol(state),
                 _ => CreateDot(state)
@@ -54,34 +55,39 @@ namespace VoidUI.Services
 
             if (_currentElement is Canvas cvs)
             {
-                Canvas.SetLeft(_currentElement, cx - cvs.Width / 2.0);
-                Canvas.SetTop(_currentElement, cy - cvs.Height / 2.0);
+                Canvas.SetLeft(_currentElement, Snap(cx - cvs.Width / 2.0));
+                Canvas.SetTop(_currentElement, Snap(cy - cvs.Height / 2.0));
             }
             else if (_currentElement is Ellipse el)
             {
-                Canvas.SetLeft(_currentElement, cx - el.Width / 2.0);
-                Canvas.SetTop(_currentElement, cy - el.Height / 2.0);
+                Canvas.SetLeft(_currentElement, Snap(cx - el.Width / 2.0));
+                Canvas.SetTop(_currentElement, Snap(cy - el.Height / 2.0));
             }
             else if (_currentElement is TextBlock tb)
             {
                 tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                 var tbw = tb.DesiredSize.Width;
                 var tbh = tb.DesiredSize.Height;
-                Canvas.SetLeft(_currentElement, cx - tbw / 2.0);
-                Canvas.SetTop(_currentElement, cy - tbh / 2.0);
+                Canvas.SetLeft(_currentElement, Snap(cx - tbw / 2.0));
+                Canvas.SetTop(_currentElement, Snap(cy - tbh / 2.0));
             }
             else
             {
-                Canvas.SetLeft(_currentElement, cx);
-                Canvas.SetTop(_currentElement, cy);
+                Canvas.SetLeft(_currentElement, Snap(cx));
+                Canvas.SetTop(_currentElement, Snap(cy));
             }
 
             _canvas.Children.Add(_currentElement);
 
-            var transformGroup = new TransformGroup();
-            transformGroup.Children.Add(new RotateTransform(state.Rotation, cx, cy));
-            _canvas.RenderTransform = transformGroup;
-            _canvas.RenderTransformOrigin = new Point(0, 0);
+            // Применяем поворот только при ненулевом угле: нулевой RotateTransform
+            // всё равно включает трансформ-пайплайн и ломает попиксельный снаппинг.
+            if (Math.Abs(state.Rotation) > 0.01)
+            {
+                var transformGroup = new TransformGroup();
+                transformGroup.Children.Add(new RotateTransform(state.Rotation, cx, cy));
+                _canvas.RenderTransform = transformGroup;
+                _canvas.RenderTransformOrigin = new Point(0, 0);
+            }
 
             ApplyAnimations(state, cx, cy);
             ApplyMotions(state, cx, cy);
@@ -98,14 +104,27 @@ namespace VoidUI.Services
             _rainbowBrushes.Clear();
         }
 
+        /// <summary>
+        /// Привязывает значение (в DIP) к границе физического пикселя с учётом DPI,
+        /// чтобы тонкие прямоугольники рендерились без антиалиасинга (полупрозрачных краёв).
+        /// </summary>
+        private double Snap(double value)
+        {
+            double scale = 1.0;
+            try { scale = System.Windows.Media.VisualTreeHelper.GetDpi(_canvas).PixelsPerDip; }
+            catch { }
+            if (scale <= 0) scale = 1.0;
+            return Math.Round(value * scale, MidpointRounding.AwayFromZero) / scale;
+        }
+
         private FrameworkElement CreateDot(CrosshairState state)
         {
             var brush = GetBrush(state.Color);
             _rainbowBrushes.Add(brush);
             return new Ellipse
             {
-                Width = state.Size,
-                Height = state.Size,
+                Width = CrosshairGeometry.DotSize(state.Size),
+                Height = CrosshairGeometry.DotSize(state.Size),
                 Fill = brush,
                 Opacity = state.Opacity / 100.0
             };
@@ -119,28 +138,26 @@ namespace VoidUI.Services
             var vBrush = GetBrush(state.Color);
             _rainbowBrushes.Add(hBrush);
             _rainbowBrushes.Add(vBrush);
-            var hBar = new Rectangle
-            {
-                Width = state.Size * 2,
-                Height = state.Thickness,
-                Fill = hBrush,
-                Opacity = state.Opacity / 100.0
-            };
-            Canvas.SetLeft(hBar, center - state.Size);
-            Canvas.SetTop(hBar, center - state.Thickness / 2.0);
+            double t = CrosshairGeometry.Thickness(state.Thickness);
 
-            var vBar = new Rectangle
+            // Геометрия — из общего CrosshairGeometry, что и в превью.
+            var bars = new List<Bar>();
+            CrosshairGeometry.CrossBars(center, center, state.Size, t, bars);
+            int idx = 0;
+            foreach (var b in bars)
             {
-                Width = state.Thickness,
-                Height = state.Size * 2,
-                Fill = vBrush,
-                Opacity = state.Opacity / 100.0
-            };
-            Canvas.SetLeft(vBar, center - state.Thickness / 2.0);
-            Canvas.SetTop(vBar, center - state.Size);
-
-            c.Children.Add(hBar);
-            c.Children.Add(vBar);
+                var r = new Rectangle
+                {
+                    Width = Snap(b.W),
+                    Height = Snap(b.H),
+                    Fill = idx == 0 ? hBrush : vBrush,
+                    Opacity = state.Opacity / 100.0
+                };
+                Canvas.SetLeft(r, Snap(b.X));
+                Canvas.SetTop(r, Snap(b.Y));
+                c.Children.Add(r);
+                idx++;
+            }
             return c;
         }
 
@@ -148,12 +165,13 @@ namespace VoidUI.Services
         {
             var brush = GetBrush(state.Color);
             _rainbowBrushes.Add(brush);
+            double t = CrosshairGeometry.Thickness(state.Thickness);
             return new Ellipse
             {
-                Width = state.Size * 2,
-                Height = state.Size * 2,
+                Width = CrosshairGeometry.CircleDiameter(state.Size),
+                Height = CrosshairGeometry.CircleDiameter(state.Size),
                 Stroke = brush,
-                StrokeThickness = state.Thickness,
+                StrokeThickness = t,
                 Opacity = state.Opacity / 100.0
             };
         }
@@ -162,56 +180,26 @@ namespace VoidUI.Services
         {
             double center = 50.0;
             var c = new Canvas { Width = 100, Height = 100 };
-            double s = state.Size * 0.5;
-            double t = state.Thickness;
             var brush = GetBrush(state.Color);
             _rainbowBrushes.Add(brush);
+            double t = CrosshairGeometry.Thickness(state.Thickness);
             double o = state.Opacity / 100.0;
 
-            var lines = new Line[]
+            var bars = new List<Bar>();
+            CrosshairGeometry.BracketBars(center, center, state.Size, t, bars);
+            foreach (var b in bars)
             {
-                new Line { X1 = center - s, Y1 = center - s, X2 = center - s * 0.3, Y2 = center - s, Stroke = brush, StrokeThickness = t, Opacity = o },
-                new Line { X1 = center + s * 0.3, Y1 = center - s, X2 = center + s, Y2 = center - s, Stroke = brush, StrokeThickness = t, Opacity = o },
-                new Line { X1 = center - s, Y1 = center + s, X2 = center - s * 0.3, Y2 = center + s, Stroke = brush, StrokeThickness = t, Opacity = o },
-                new Line { X1 = center + s * 0.3, Y1 = center + s, X2 = center + s, Y2 = center + s, Stroke = brush, StrokeThickness = t, Opacity = o },
-                new Line { X1 = center - s, Y1 = center - s, X2 = center - s, Y2 = center - s * 0.3, Stroke = brush, StrokeThickness = t, Opacity = o },
-                new Line { X1 = center - s, Y1 = center + s * 0.3, X2 = center - s, Y2 = center + s, Stroke = brush, StrokeThickness = t, Opacity = o },
-                new Line { X1 = center + s, Y1 = center - s, X2 = center + s, Y2 = center - s * 0.3, Stroke = brush, StrokeThickness = t, Opacity = o },
-                new Line { X1 = center + s, Y1 = center + s * 0.3, X2 = center + s, Y2 = center + s, Stroke = brush, StrokeThickness = t, Opacity = o }
-            };
-
-            foreach (var line in lines) c.Children.Add(line);
-            return c;
-        }
-
-        private FrameworkElement CreateTactical(CrosshairState state)
-        {
-            double center = 50.0;
-            var c = new Canvas { Width = 100, Height = 100 };
-            double t = state.Thickness;
-            var brush = GetBrush(state.Color);
-            _rainbowBrushes.Add(brush);
-
-            var vBar = new Rectangle
-            {
-                Width = t, Height = state.Size,
-                Fill = brush, Opacity = state.Opacity / 100.0,
-                RadiusX = t / 2.0, RadiusY = t / 2.0
-            };
-            Canvas.SetLeft(vBar, center - t / 2.0);
-            Canvas.SetTop(vBar, center - state.Size * 0.4);
-
-            var hBar = new Rectangle
-            {
-                Height = t, Width = state.Size,
-                Fill = brush, Opacity = state.Opacity / 100.0,
-                RadiusX = t / 2.0, RadiusY = t / 2.0
-            };
-            Canvas.SetLeft(hBar, center - state.Size * 0.4);
-            Canvas.SetTop(hBar, center - t / 2.0);
-
-            c.Children.Add(vBar);
-            c.Children.Add(hBar);
+                var r = new Rectangle
+                {
+                    Width = Snap(b.W),
+                    Height = Snap(b.H),
+                    Fill = brush,
+                    Opacity = o
+                };
+                Canvas.SetLeft(r, Snap(b.X));
+                Canvas.SetTop(r, Snap(b.Y));
+                c.Children.Add(r);
+            }
             return c;
         }
 
@@ -222,7 +210,7 @@ namespace VoidUI.Services
             return new TextBlock
             {
                 Text = state.Symbol,
-                FontSize = state.Size * 2.5,
+                FontSize = CrosshairGeometry.SymbolFontSize(state.Size),
                 Foreground = brush,
                 Opacity = state.Opacity / 100.0,
                 TextAlignment = TextAlignment.Center
@@ -232,24 +220,33 @@ namespace VoidUI.Services
         private void ApplyAnimations(CrosshairState state, double cx, double cy)
         {
             _animStoryboard = new Storyboard();
-            var duration = new Duration(TimeSpan.FromSeconds(2.0 / Math.Max(state.Speed, 1) * 5.0));
+            var duration = new Duration(TimeSpan.FromSeconds(CrosshairGeometry.AnimDuration(state.Speed)));
 
             if (_currentElement is FrameworkElement fe)
             {
+                // Трансформ нужен только при реально включённой анимации:
+                // пустой TransformGroup всё равно включает трансформ-пайплайн
+                // и ломает покадровый снаппинг (тонкие линии становятся полупрозрачными).
+                // Ось вращения — центр элемента (= центр прицела), как в превью.
                 fe.RenderTransformOrigin = new Point(0.5, 0.5);
-                var tg = new TransformGroup();
-                fe.RenderTransform = tg;
-
                 switch (state.Animation)
                 {
                     case "pulse":
-                        AddScaleAnimation(fe, tg, duration, 1.0, 1.15);
+                    {
+                        var tg = new TransformGroup();
+                        fe.RenderTransform = tg;
+                        AddScaleAnimation(fe, tg, duration, CrosshairGeometry.PulseFrom, CrosshairGeometry.PulseTo);
                         break;
+                    }
                     case "scale":
-                        AddScaleAnimation(fe, tg, new Duration(TimeSpan.FromSeconds(1.5)), 1.0, 1.5);
+                    {
+                        var tg = new TransformGroup();
+                        fe.RenderTransform = tg;
+                        AddScaleAnimation(fe, tg, new Duration(TimeSpan.FromSeconds(CrosshairGeometry.ScaleDuration)), CrosshairGeometry.ScaleFrom, CrosshairGeometry.ScaleTo);
                         break;
+                    }
                     case "glow":
-                        AddOpacityAnimation(fe, duration, state.Opacity / 100.0, (state.Opacity / 100.0) * 0.7);
+                        AddOpacityAnimation(fe, duration, state.Opacity / 100.0, (state.Opacity / 100.0) * CrosshairGeometry.GlowDim);
                         break;
                 }
             }
@@ -263,6 +260,8 @@ namespace VoidUI.Services
 
         private void ApplyMotions(CrosshairState state, double cx, double cy)
         {
+            if (!state.SpinEnabled && !state.OrbitEnabled) return;
+
             _motionStoryboard = new Storyboard();
 
             var existingTg = _canvas.RenderTransform as TransformGroup;
@@ -276,7 +275,10 @@ namespace VoidUI.Services
 
             if (state.SpinEnabled && _currentElement != null)
             {
-                var spinDur = new Duration(TimeSpan.FromSeconds(2.0 / Math.Max(state.SpinSpeed, 1) * 5.0));
+                // Вращаем вокруг центра прицела, а не вокруг левого верхнего угла элемента —
+                // иначе спин выглядит как «орбита» и расходится с превью.
+                _currentElement.RenderTransformOrigin = new Point(0.5, 0.5);
+                var spinDur = new Duration(TimeSpan.FromSeconds(CrosshairGeometry.SpinDuration(state.SpinSpeed)));
                 var spinAnim = new DoubleAnimation(0, 360, spinDur)
                 {
                     RepeatBehavior = RepeatBehavior.Forever
@@ -302,7 +304,7 @@ namespace VoidUI.Services
 
             if (state.OrbitEnabled)
             {
-                var orbitDur = new Duration(TimeSpan.FromSeconds(2.0 / Math.Max(state.OrbitSpeed, 1) * 5.0));
+                var orbitDur = new Duration(TimeSpan.FromSeconds(CrosshairGeometry.OrbitDuration(state.OrbitSpeed)));
                 double radius = state.OrbitRadius;
 
                 var orbitAngleAnim = new DoubleAnimation(0, 360, orbitDur)
@@ -342,11 +344,10 @@ namespace VoidUI.Services
 
         private void ApplyRainbow(CrosshairState state)
         {
-            double speed = Math.Max(state.RainbowSpeed, 1);
             var palette = state.RainbowPalette;
             int count = palette.Count;
             var colors = palette.Select(hex => (Color)ColorConverter.ConvertFromString(hex)).ToList();
-            double cycleDur = 3.0 / speed;
+            double cycleDur = CrosshairGeometry.RainbowCycleDuration(state.RainbowSpeed);
             var totalDur = new Duration(TimeSpan.FromSeconds(cycleDur * count));
 
             foreach (var brush in _rainbowBrushes)

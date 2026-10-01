@@ -26,6 +26,9 @@ namespace VoidUI.Services
         public event Action<List<ServerInfo>> OnDataUpdated;
         public event Action<string> OnStatusChanged;
 
+        /// <summary>Идёт ли сейчас парс лога (Run или Auto в комбате).</summary>
+        public bool IsMonitoring => _monitorCts != null;
+
         public CombatService(SteamService steamService)
         {
             _steamService = steamService;

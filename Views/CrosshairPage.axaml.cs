@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -27,7 +29,7 @@ public partial class CrosshairPage : UserControl
     private bool _spinEnabled;
     private bool _orbitEnabled;
     private string _selectedColor = "#22c55e";
-    private double _size = 16, _thickness = 2, _opacity = 100, _speed = 5, _rotation = 0, _posX = 0, _posY = 0;
+    private double _size = 16, _thickness = 3, _opacity = 100, _speed = 5, _rotation = 0, _posX = 0, _posY = 0;
     private double _spinSpeed = 5, _orbitRadius = 30, _orbitSpeed = 5;
     private string _spinDir = "normal", _orbitDir = "normal";
     private int _rainbowSpeed = 5;
@@ -40,8 +42,8 @@ public partial class CrosshairPage : UserControl
     private DispatcherTimer? _rainbowAnimTimer;
     private double _rainbowExpandPhase;
 
-    private readonly string[] _presetNames = { "dot", "cross", "circle", "bracket", "tactical", "custom" };
-    private readonly string[] _presetLabels = { ".", "+", "o", "[ ]", "T", "S" };
+    private readonly string[] _presetNames = { "dot", "cross", "circle", "bracket", "custom" };
+    private readonly string[] _presetLabels = { ".", "+", "o", "[ ]", "S" };
     private readonly string[] _animNames = { "none", "pulse", "scale", "glow" };
     private readonly string[] _colorHexes =
     {
@@ -59,6 +61,18 @@ public partial class CrosshairPage : UserControl
     private double _animPhase;
     private bool _suppressSliderEvents;
 
+    // Превью строится один раз при изменении настроек; кадры анимации двигают
+    // только трансформы/прозрачность/цвет — без пересборки визуального дерева.
+    private Canvas? _previewShapes;
+    private CrosshairState? _previewState;
+    private TransformGroup? _previewTg;
+    private RotateTransform? _previewRotate;
+    private ScaleTransform? _previewScale;
+    private readonly List<SolidColorBrush> _previewBrushes = new();
+    private byte[] _previewPaletteRgb = Array.Empty<byte>();
+    private int _previewPaletteCount;
+    private readonly System.Diagnostics.Stopwatch _animClock = new();
+
     public CrosshairPage(SettingsService settings, OverlayWindow? overlay, System.Windows.Threading.Dispatcher? overlayDispatcher)
     {
         _settings = settings;
@@ -71,13 +85,17 @@ public partial class CrosshairPage : UserControl
     private void OnLoaded(object? sender, RoutedEventArgs e)
     {
         _canvas = this.FindControl<Canvas>("CrosshairCanvas");
+        // При смене вкладки страница выбрасывается, но DispatcherTimer держит её в памяти
+        // и крутит 60 FPS уже для чужого кадра — останавливаем таймер при выходе из дерева.
+        AttachedToVisualTree += (_, _) => StartPreviewAnimation();
+        DetachedFromVisualTree += (_, _) => { _previewTimer?.Stop(); _previewTimer = null; };
         var ch = _settings.GetSettings().Crosshair ?? new CrosshairState();
         _selectedPreset = ch.Preset ?? "dot";
         _selectedAnim = ch.Animation ?? "none";
         _spinEnabled = ch.SpinEnabled;
         _orbitEnabled = ch.OrbitEnabled;
         _selectedColor = ch.Color ?? "#22c55e";
-        _size = ch.Size; _thickness = ch.Thickness; _opacity = ch.Opacity;
+        _size = ch.Size; _thickness = Math.Max(ch.Thickness, 1); _opacity = ch.Opacity;
         _speed = ch.Speed; _rotation = ch.Rotation; _posX = ch.PosX; _posY = ch.PosY;
         _spinSpeed = ch.SpinSpeed; _spinDir = ch.SpinDir ?? "normal";
         _orbitRadius = ch.OrbitRadius; _orbitSpeed = ch.OrbitSpeed; _orbitDir = ch.OrbitDir ?? "normal";
@@ -207,17 +225,7 @@ public partial class CrosshairPage : UserControl
 
         SetupButton("CopyConfigBtn2", async () =>
         {
-            var ch = new CrosshairState
-            {
-                Preset = _selectedPreset, Animation = _selectedAnim,
-                SpinEnabled = _spinEnabled, OrbitEnabled = _orbitEnabled,
-                Color = _selectedColor, Size = (int)_size, Thickness = (int)_thickness, Opacity = (int)_opacity,
-                Speed = (int)_speed, Rotation = (int)_rotation, PosX = (int)_posX, PosY = (int)_posY,
-                SpinSpeed = (int)_spinSpeed, SpinDir = _spinDir,
-                OrbitRadius = (int)_orbitRadius, OrbitSpeed = (int)_orbitSpeed, OrbitDir = _orbitDir,
-                RainbowEnabled = _rainbowEnabled, RainbowSpeed = _rainbowSpeed, RainbowTheme = _rainbowTheme,
-                BindKey = _bindKey, Symbol = _customSymbol
-            };
+            var ch = BuildCurrentState();
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(ch);
             var encoded = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
             var topLevel = TopLevel.GetTopLevel(this);
@@ -231,15 +239,36 @@ public partial class CrosshairPage : UserControl
             if (topLevel == null) return;
             var text = await topLevel.Clipboard.GetTextAsync();
             if (string.IsNullOrWhiteSpace(text)) { ShowConfigMsg("Clipboard is empty"); return; }
+            var t = text.Trim().Trim('"');
+            CrosshairState? ch = null;
+            // 1) share code (base64)  2) plain JSON (copied from a file / Save->Copy)
             try
             {
-                var json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(text.Trim()));
-                var ch = Newtonsoft.Json.JsonConvert.DeserializeObject<CrosshairState>(json);
-                if (ch == null) { ShowConfigMsg("Invalid config"); return; }
-                ApplyCrosshairState(ch);
-                ShowConfigMsg("Loaded!");
+                var json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(t));
+                ch = Newtonsoft.Json.JsonConvert.DeserializeObject<CrosshairState>(json);
             }
-            catch { ShowConfigMsg("Invalid config code"); }
+            catch { ch = null; }
+            if (ch == null)
+            {
+                try { ch = Newtonsoft.Json.JsonConvert.DeserializeObject<CrosshairState>(t); }
+                catch { ch = null; }
+            }
+            if (ch == null) { ShowConfigMsg("Invalid config"); return; }
+
+            var incoming = NormalizeState(ch);
+            var same = SameState(incoming, BuildCurrentState());
+            try
+            {
+                if (!same && topLevel is Window owner)
+                {
+                    ShowConfigMsg("Confirming paste...");
+                    var ok = await ConfirmPasteAsync(owner);
+                    if (!ok) { ShowConfigMsg("Paste cancelled"); return; }
+                }
+                ApplyCrosshairState(incoming);
+                ShowConfigMsg(same ? "Applied (identical)" : "Applied!");
+            }
+            catch (Exception ex) { ShowConfigMsg("Paste error: " + ex.Message); }
         });
 
         SetupConfigs();
@@ -258,17 +287,7 @@ public partial class CrosshairPage : UserControl
             var configName = $"config_{timestamp}";
             var path = System.IO.Path.Combine(configsDir, $"{configName}.json");
 
-            var ch = new CrosshairState
-            {
-                Preset = _selectedPreset, Animation = _selectedAnim,
-                SpinEnabled = _spinEnabled, OrbitEnabled = _orbitEnabled,
-                Color = _selectedColor, Size = (int)_size, Thickness = (int)_thickness, Opacity = (int)_opacity,
-                Speed = (int)_speed, Rotation = (int)_rotation, PosX = (int)_posX, PosY = (int)_posY,
-                SpinSpeed = (int)_spinSpeed, SpinDir = _spinDir,
-                OrbitRadius = (int)_orbitRadius, OrbitSpeed = (int)_orbitSpeed, OrbitDir = _orbitDir,
-                RainbowEnabled = _rainbowEnabled, RainbowSpeed = _rainbowSpeed, RainbowTheme = _rainbowTheme,
-                BindKey = _bindKey, Symbol = _customSymbol
-            };
+            var ch = BuildCurrentState();
 
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(ch, Newtonsoft.Json.Formatting.Indented);
             File.WriteAllText(path, json);
@@ -279,17 +298,7 @@ public partial class CrosshairPage : UserControl
 
         SetupButton("CopyConfigBtn", () =>
         {
-            var ch = new CrosshairState
-            {
-                Preset = _selectedPreset, Animation = _selectedAnim,
-                SpinEnabled = _spinEnabled, OrbitEnabled = _orbitEnabled,
-                Color = _selectedColor, Size = (int)_size, Thickness = (int)_thickness, Opacity = (int)_opacity,
-                Speed = (int)_speed, Rotation = (int)_rotation, PosX = (int)_posX, PosY = (int)_posY,
-                SpinSpeed = (int)_spinSpeed, SpinDir = _spinDir,
-                OrbitRadius = (int)_orbitRadius, OrbitSpeed = (int)_orbitSpeed, OrbitDir = _orbitDir,
-                RainbowEnabled = _rainbowEnabled, RainbowSpeed = _rainbowSpeed, RainbowTheme = _rainbowTheme,
-                BindKey = _bindKey, Symbol = _customSymbol
-            };
+            var ch = BuildCurrentState();
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(ch, Newtonsoft.Json.Formatting.Indented);
             var topLevel = TopLevel.GetTopLevel(this);
             if (topLevel != null)
@@ -350,6 +359,127 @@ public partial class CrosshairPage : UserControl
         catch { ShowConfigStatus("Failed to load"); }
     }
 
+    private async Task<bool> ConfirmPasteAsync(Window owner)
+    {
+        var win = new Window
+        {
+            Width = 340,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Background = Brushes.Transparent,
+            SystemDecorations = SystemDecorations.None,
+            CanResize = false,
+            ShowInTaskbar = false,
+            TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent }
+        };
+
+        var card = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#16161c")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#2a2a34")),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(14),
+            Padding = new Thickness(20),
+            BoxShadow = BoxShadows.Parse("0 12 32 0 #55000000")
+        };
+
+        var title = new TextBlock
+        {
+            Text = "Replace current settings?",
+            Foreground = new SolidColorBrush(Color.Parse("#ededef")),
+            FontSize = 14,
+            FontWeight = FontWeight.SemiBold
+        };
+        var body = new TextBlock
+        {
+            Text = "The pasted crosshair differs from the active one. Apply it and save?",
+            Foreground = new SolidColorBrush(Color.Parse("#a5a5b0")),
+            FontSize = 11,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 6, 0, 0)
+        };
+
+        var replaceBtn = new Button
+        {
+            Content = "Replace",
+            Width = 100,
+            Height = 32,
+            Background = new SolidColorBrush(Color.Parse("#7c5cfc")),
+            Foreground = Brushes.White,
+            CornerRadius = new CornerRadius(9),
+            BorderThickness = new Thickness(0),
+            FontSize = 11,
+            FontWeight = FontWeight.SemiBold,
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        var cancelBtn = new Button
+        {
+            Content = "Cancel",
+            Width = 100,
+            Height = 32,
+            Background = new SolidColorBrush(Color.Parse("#1e1e26")),
+            Foreground = new SolidColorBrush(Color.Parse("#a5a5b0")),
+            CornerRadius = new CornerRadius(9),
+            BorderBrush = new SolidColorBrush(Color.Parse("#2a2a34")),
+            BorderThickness = new Thickness(1),
+            FontSize = 11,
+            FontWeight = FontWeight.SemiBold,
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+
+        var btnRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 16, 0, 0) };
+        btnRow.Children.Add(cancelBtn);
+        btnRow.Children.Add(replaceBtn);
+
+        var panel = new StackPanel { Spacing = 4 };
+        panel.Children.Add(title);
+        panel.Children.Add(body);
+        panel.Children.Add(btnRow);
+        card.Child = panel;
+        win.Content = card;
+
+        replaceBtn.Click += (_, _) => win.Close(true);
+        cancelBtn.Click += (_, _) => win.Close(false);
+        win.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape) win.Close(false);
+            else if (e.Key == Key.Enter) win.Close(true);
+        };
+
+        return await win.ShowDialog<bool>(owner);
+    }
+
+    private CrosshairState BuildCurrentState() => new CrosshairState
+    {
+        Preset = _selectedPreset, Animation = _selectedAnim,
+        SpinEnabled = _spinEnabled, OrbitEnabled = _orbitEnabled,
+        Color = _selectedColor, Size = (int)_size, Thickness = _thickness, Opacity = (int)_opacity,
+        Speed = (int)_speed, Rotation = (int)_rotation, PosX = (int)_posX, PosY = (int)_posY,
+        SpinSpeed = (int)_spinSpeed, SpinDir = _spinDir,
+        OrbitRadius = (int)_orbitRadius, OrbitSpeed = (int)_orbitSpeed, OrbitDir = _orbitDir,
+        RainbowEnabled = _rainbowEnabled, RainbowSpeed = _rainbowSpeed, RainbowTheme = _rainbowTheme,
+        BindKey = _bindKey, Symbol = _customSymbol
+    };
+
+    // Fills the same defaults ApplyCrosshairState uses, so a partial config
+    // deserializes to the exact state it would end up in after applying.
+    private static CrosshairState NormalizeState(CrosshairState ch) => new CrosshairState
+    {
+        Preset = ch.Preset ?? "dot", Animation = ch.Animation ?? "none",
+        SpinEnabled = ch.SpinEnabled, OrbitEnabled = ch.OrbitEnabled,
+        Color = ch.Color ?? "#22c55e", Size = ch.Size, Thickness = Math.Max(ch.Thickness, 1),
+        Opacity = ch.Opacity, Speed = ch.Speed, Rotation = ch.Rotation,
+        PosX = ch.PosX, PosY = ch.PosY,
+        SpinSpeed = ch.SpinSpeed, SpinDir = ch.SpinDir ?? "normal",
+        OrbitRadius = ch.OrbitRadius, OrbitSpeed = ch.OrbitSpeed, OrbitDir = ch.OrbitDir ?? "normal",
+        RainbowEnabled = ch.RainbowEnabled, RainbowSpeed = ch.RainbowSpeed,
+        RainbowTheme = ch.RainbowTheme ?? "full",
+        BindKey = ch.BindKey ?? "F6", Symbol = ch.Symbol ?? "+"
+    };
+
+    private static bool SameState(CrosshairState a, CrosshairState b) =>
+        Newtonsoft.Json.JsonConvert.SerializeObject(a) == Newtonsoft.Json.JsonConvert.SerializeObject(b);
+
     private void ApplyCrosshairState(CrosshairState ch)
     {
         _selectedPreset = ch.Preset ?? "dot";
@@ -357,7 +487,7 @@ public partial class CrosshairPage : UserControl
         _spinEnabled = ch.SpinEnabled;
         _orbitEnabled = ch.OrbitEnabled;
         _selectedColor = ch.Color ?? "#22c55e";
-        _size = ch.Size; _thickness = ch.Thickness; _opacity = ch.Opacity;
+        _size = ch.Size; _thickness = Math.Max(ch.Thickness, 1); _opacity = ch.Opacity;
         _speed = ch.Speed; _rotation = ch.Rotation;
         _posX = ch.PosX; _posY = ch.PosY;
         _spinSpeed = ch.SpinSpeed; _spinDir = ch.SpinDir ?? "normal";
@@ -367,6 +497,7 @@ public partial class CrosshairPage : UserControl
         _bindKey = ch.BindKey ?? "F6";
         _customSymbol = ch.Symbol ?? "+";
         SyncAllControls();
+        ApplyLive();
     }
 
     private void ShowConfigMsg(string msg)
@@ -603,9 +734,9 @@ public partial class CrosshairPage : UserControl
     private void SyncText(string name, double val, string suffix)
     {
         var tb = SafeFind<TextBlock>(name);
-        if (tb != null) { tb.Text = $"{val:0}{suffix}"; return; }
+        if (tb != null) { tb.Text = $"{val:0.#}{suffix}"; return; }
         var box = SafeFind<TextBox>(name);
-        if (box != null && !box.IsFocused) box.Text = $"{val:0}{suffix}";
+        if (box != null && !box.IsFocused) box.Text = $"{val:0.#}{suffix}";
     }
 
     private void SyncButtonGroupActive(string panelName, string[] names, string current)
@@ -625,27 +756,24 @@ public partial class CrosshairPage : UserControl
         UpdateNotebook();
         PushToOverlay();
         StartPreviewAnimation();
+        SaveSettings();
     }
 
     private void PushToOverlay()
     {
-        var palette = new System.Collections.Generic.List<string>();
+        var ch = BuildCurrentState();
+        ch.RainbowPalette = BuildPalette();
+        _overlayDispatcher?.Invoke(() => _overlayWindow?.UpdateCrosshair(ch));
+    }
+
+    /// <summary>Палитра rainbow для текущей темы — один источник и для превью, и для оверлея.</summary>
+    private List<string> BuildPalette()
+    {
+        var palette = new List<string>();
         int themeIdx = Array.IndexOf(_rainbowThemeNames, _rainbowTheme);
         if (themeIdx >= 0 && themeIdx < _rainbowThemeColors.Length)
             palette.AddRange(_rainbowThemeColors[themeIdx]);
-
-        var ch = new CrosshairState
-        {
-            Preset = _selectedPreset, Animation = _selectedAnim, SpinEnabled = _spinEnabled, OrbitEnabled = _orbitEnabled,
-            Color = _selectedColor, Size = (int)_size, Thickness = (int)_thickness, Opacity = (int)_opacity,
-            Speed = (int)_speed, Rotation = (int)_rotation, PosX = (int)_posX, PosY = (int)_posY,
-            SpinSpeed = (int)_spinSpeed, SpinDir = _spinDir,
-            OrbitRadius = (int)_orbitRadius, OrbitSpeed = (int)_orbitSpeed, OrbitDir = _orbitDir,
-            RainbowEnabled = _rainbowEnabled, RainbowSpeed = _rainbowSpeed, RainbowTheme = _rainbowTheme,
-            RainbowPalette = palette,
-            BindKey = _bindKey, Symbol = _customSymbol
-        };
-        _overlayDispatcher?.Invoke(() => _overlayWindow?.UpdateCrosshair(ch));
+        return palette;
     }
 
     private void SetupButtonGroup(string panelName, string[] names, string[] labels, string current, Action<string> onSelect)
@@ -790,12 +918,12 @@ public partial class CrosshairPage : UserControl
         {
             if (_suppressSliderEvents) return;
             onChange(slider.Value);
-            if (valueBlock != null) valueBlock.Text = $"{slider.Value:0}{suffix}";
-            else if (valueBox != null && !valueBox.IsFocused) valueBox.Text = $"{slider.Value:0}{suffix}";
+            if (valueBlock != null) valueBlock.Text = $"{slider.Value:0.#}{suffix}";
+            else if (valueBox != null && !valueBox.IsFocused) valueBox.Text = $"{slider.Value:0.#}{suffix}";
         };
         slider.Value = initial;
-        if (valueBlock != null) valueBlock.Text = $"{initial:0}{suffix}";
-        else if (valueBox != null) valueBox.Text = $"{initial:0}{suffix}";
+        if (valueBlock != null) valueBlock.Text = $"{initial:0.#}{suffix}";
+        else if (valueBox != null) valueBox.Text = $"{initial:0.#}{suffix}";
 
         if (valueBox != null)
         {
@@ -809,7 +937,7 @@ public partial class CrosshairPage : UserControl
                     _suppressSliderEvents = false;
                     onChange(slider.Value);
                 }
-                valueBox.Text = $"{slider.Value:0}{suffix}";
+                valueBox.Text = $"{slider.Value:0.#}{suffix}";
             };
         }
     }
@@ -823,7 +951,7 @@ public partial class CrosshairPage : UserControl
         if (_orbitEnabled) motions.Add("Orbit");
         SetText("NbMotion", $"Motion: {(motions.Count > 0 ? string.Join(" + ", motions) : "None")}");
         SetText("NbSize", $"Size: {_size:0}px");
-        SetText("NbThickness", $"Thickness: {_thickness:0}px");
+        SetText("NbThickness", $"Thickness: {_thickness:0.#}px");
         SetText("NbOpacity", $"Opacity: {_opacity:0}%");
         SetText("NbColor", $"Color: {_selectedColor}");
         SetText("NbSpeed", $"Speed: {_speed:0}x");
@@ -841,200 +969,217 @@ public partial class CrosshairPage : UserControl
     private void StartPreviewAnimation()
     {
         _previewTimer?.Stop();
-        bool needsAnim = _selectedAnim != "none" || _spinEnabled || _orbitEnabled || _rainbowEnabled;
-        if (!needsAnim) { _previewTimer = null; DrawPreview(); return; }
+        _previewTimer = null;
+        _animClock.Restart();
         _animPhase = 0;
+
+        RebuildPreview();   // форма строится один раз
+        PreviewFrame();     // кадр на t=0 (он же финальный, если анимации нет)
+
+        var s = _previewState;
+        bool needsAnim = s != null && (s.Animation != "none" || s.SpinEnabled || s.OrbitEnabled || s.RainbowEnabled);
+        if (!needsAnim) return;
+
         _previewTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
-        _previewTimer.Tick += (_, _) => { _animPhase += 0.016; DrawPreview(); };
+        _previewTimer.Tick += (_, _) =>
+        {
+            if (!IsVisible) { _previewTimer?.Stop(); _previewTimer = null; return; }
+            _animPhase = _animClock.Elapsed.TotalSeconds;
+            PreviewFrame();
+        };
         _previewTimer.Start();
-        DrawPreview();
     }
 
-    private void DrawPreview()
+    /// <summary>Строит фигуры превью один раз — при изменении настроек, а не каждый кадр.</summary>
+    private void RebuildPreview()
     {
         if (_canvas == null) return;
         _canvas.Children.Clear();
+        _previewBrushes.Clear();
+        _previewShapes = null;
+        _previewTg = null;
+        _previewRotate = null;
+        _previewScale = null;
+
+        var state = BuildCurrentState();
+        _previewState = state;
+
+        // Та же палитра, что уходит в оверлей.
+        var palette = BuildPalette();
+        _previewPaletteCount = palette.Count;
+        _previewPaletteRgb = new byte[palette.Count * 3];
+        for (int i = 0; i < palette.Count; i++)
+        {
+            var pc = Color.Parse(palette[i]);
+            _previewPaletteRgb[i * 3] = pc.R;
+            _previewPaletteRgb[i * 3 + 1] = pc.G;
+            _previewPaletteRgb[i * 3 + 2] = pc.B;
+        }
 
         const double center = 150.0;
-        double cx = center + _posX;
-        double cy = center + _posY;
+        double posX = center + state.PosX;
+        double posY = center + state.PosY;
+        // Орбита запекается в координаты фигур (эквивалент TranslateTransform(r,0) в оверлее),
+        // а общий поворот вокруг центра гонит фигуры по кругу.
+        double cx = posX + (state.OrbitEnabled ? state.OrbitRadius : 0);
+        double cy = posY;
 
-        double animScale = 1.0;
-        double animOpacity = _opacity / 100.0;
-        double extraRotation = 0;
-        double orbitX = 0, orbitY = 0;
-        Color currentColor = Color.Parse(_selectedColor);
+        var brush = new SolidColorBrush(Color.Parse(state.Color));
+        _previewBrushes.Add(brush);
 
-        double speedFactor = Math.Max(_speed, 1);
+        double t = CrosshairGeometry.Thickness(state.Thickness);
+        double sz = state.Size;
 
-        if (_selectedAnim != "none")
+        var shapes = new Canvas { Width = 300, Height = 300 };
+
+        switch (state.Preset)
         {
-            double animDuration = _selectedAnim switch
-            {
-                "breathe" => 3.0,
-                "scale" => 1.5,
-                _ => 10.0 / speedFactor
-            };
-            double phase = (_animPhase / animDuration) * Math.PI * 2;
-            double t = (Math.Sin(phase) + 1.0) / 2.0;
-
-            switch (_selectedAnim)
-            {
-                case "pulse":
-                    animScale = 1.0 + t * 0.15;
-                    break;
-                case "scale":
-                    animScale = 1.0 + t * 0.5;
-                    break;
-                case "glow":
-                    animOpacity = (_opacity / 100.0) * (1.0 - t * 0.3);
-                    break;
-            }
-        }
-
-        if (_rainbowEnabled)
-        {
-            double rainbowDur = 3.0 / Math.Max(_rainbowSpeed, 1);
-            double hue = (_animPhase / rainbowDur) * 360.0;
-            currentColor = GetRainbowColor(hue % 360.0);
-        }
-
-        if (_spinEnabled)
-        {
-            double spinDur = 10.0 / Math.Max(_spinSpeed, 1);
-            double spinPhase = (_animPhase / spinDur) * 360.0;
-            extraRotation = _spinDir == "reverse" ? -spinPhase : spinPhase;
-        }
-        if (_orbitEnabled)
-        {
-            double orbitDur = 10.0 / Math.Max(_orbitSpeed, 1);
-            double orbitPhase = (_animPhase / orbitDur) * Math.PI * 2;
-            double r = _orbitRadius;
-            if (_orbitDir == "reverse") orbitPhase = -orbitPhase;
-            orbitX = Math.Cos(orbitPhase) * r;
-            orbitY = Math.Sin(orbitPhase) * r;
-        }
-
-        cx += orbitX;
-        cy += orbitY;
-
-        double totalRotation = _rotation + extraRotation;
-        double sz = _size * animScale;
-        double th = _thickness;
-        var brush = new SolidColorBrush(currentColor);
-
-        switch (_selectedPreset)
-        {
-            case "dot":
-            {
-                var el = new Ellipse { Width = sz, Height = sz, Fill = brush, Opacity = animOpacity };
-                Canvas.SetLeft(el, cx - sz / 2);
-                Canvas.SetTop(el, cy - sz / 2);
-                ApplyRotation(el, cx, cy, totalRotation);
-                _canvas.Children.Add(el);
-                break;
-            }
             case "cross":
             {
-                var h = new Line { StartPoint = new Point(cx - sz, cy), EndPoint = new Point(cx + sz, cy), Stroke = brush, StrokeThickness = th, Opacity = animOpacity };
-                var v = new Line { StartPoint = new Point(cx, cy - sz), EndPoint = new Point(cx, cy + sz), Stroke = brush, StrokeThickness = th, Opacity = animOpacity };
-                ApplyRotation(h, cx, cy, totalRotation);
-                ApplyRotation(v, cx, cy, totalRotation);
-                _canvas.Children.Add(h);
-                _canvas.Children.Add(v);
-                break;
-            }
-            case "circle":
-            {
-                var el = new Ellipse { Width = sz * 2, Height = sz * 2, Stroke = brush, StrokeThickness = th, Opacity = animOpacity };
-                Canvas.SetLeft(el, cx - sz);
-                Canvas.SetTop(el, cy - sz);
-                ApplyRotation(el, cx, cy, totalRotation);
-                _canvas.Children.Add(el);
+                var bars = new List<Bar>(2);
+                CrosshairGeometry.CrossBars(cx, cy, sz, t, bars);
+                AddBars(shapes, bars, brush);
                 break;
             }
             case "bracket":
             {
-                double bs = sz * 0.6;
-                var pts = new (Point f, Point t)[] {
-                    (new(cx - bs, cy - bs), new(cx + bs, cy - bs)),
-                    (new(cx - bs, cy + bs), new(cx + bs, cy + bs)),
-                    (new(cx - bs, cy - bs), new(cx - bs, cy + bs)),
-                    (new(cx + bs, cy - bs), new(cx + bs, cy + bs))
-                };
-                foreach (var (f, t) in pts)
-                {
-                    var l = new Line { StartPoint = f, EndPoint = t, Stroke = brush, StrokeThickness = th, Opacity = animOpacity };
-                    ApplyRotation(l, cx, cy, totalRotation);
-                    _canvas.Children.Add(l);
-                }
+                var bars = new List<Bar>(8);
+                CrosshairGeometry.BracketBars(cx, cy, sz, t, bars);
+                AddBars(shapes, bars, brush);
                 break;
             }
-            case "tactical":
+            case "circle":
             {
-                var pts = new (Point f, Point t)[] {
-                    (new(cx, cy - sz), new(cx, cy + sz)),
-                    (new(cx - sz, cy), new(cx - th * 2, cy)),
-                    (new(cx + th * 2, cy), new(cx + sz, cy))
-                };
-                foreach (var (f, t) in pts)
-                {
-                    var l = new Line { StartPoint = f, EndPoint = t, Stroke = brush, StrokeThickness = th, Opacity = animOpacity };
-                    ApplyRotation(l, cx, cy, totalRotation);
-                    _canvas.Children.Add(l);
-                }
+                double d = CrosshairGeometry.CircleDiameter(sz);
+                var el = new Ellipse { Width = d, Height = d, Stroke = brush, StrokeThickness = t };
+                Canvas.SetLeft(el, Snap(cx - d / 2.0));
+                Canvas.SetTop(el, Snap(cy - d / 2.0));
+                shapes.Children.Add(el);
                 break;
             }
             case "custom":
             {
-                var el = new TextBlock { Text = _customSymbol, FontSize = sz * 2.5, Foreground = brush, Opacity = animOpacity };
+                var el = new TextBlock
+                {
+                    Text = _customSymbol,
+                    FontSize = CrosshairGeometry.SymbolFontSize(sz),
+                    Foreground = brush
+                };
                 el.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                Canvas.SetLeft(el, cx - el.DesiredSize.Width / 2);
-                Canvas.SetTop(el, cy - el.DesiredSize.Height / 2);
-                ApplyRotation(el, cx, cy, totalRotation);
-                _canvas.Children.Add(el);
+                Canvas.SetLeft(el, Snap(cx - el.DesiredSize.Width / 2.0));
+                Canvas.SetTop(el, Snap(cy - el.DesiredSize.Height / 2.0));
+                shapes.Children.Add(el);
+                break;
+            }
+            case "dot":
+            default:
+            {
+                double d = CrosshairGeometry.DotSize(sz);
+                var el = new Ellipse { Width = d, Height = d, Fill = brush };
+                Canvas.SetLeft(el, Snap(cx - d / 2.0));
+                Canvas.SetTop(el, Snap(cy - d / 2.0));
+                shapes.Children.Add(el);
                 break;
             }
         }
+
+        // Точка вращения — центр прицела (без орбитального смещения), как в оверлее.
+        _previewRotate = new RotateTransform();
+        _previewScale = new ScaleTransform(1, 1);
+        _previewTg = new TransformGroup();
+        _previewTg.Children.Add(_previewRotate);   // точка: сначала масштаб, потом поворот
+        _previewTg.Children.Add(_previewScale);
+        shapes.RenderTransformOrigin = new RelativePoint(posX, posY, RelativeUnit.Absolute);
+        shapes.RenderTransform = _previewTg;
+
+        _previewShapes = shapes;
+        _canvas.Children.Add(shapes);
     }
 
-    private Color GetRainbowColor(double hue)
+    private void AddBars(Canvas shapes, List<Bar> bars, IBrush brush)
     {
-        return _rainbowTheme switch
+        foreach (var b in bars)
         {
-            "warm" => LerpRainbow(hue, new (double, string)[] { (0, "#ff0000"), (60, "#ffff00"), (120, "#ff8800"), (360, "#ff0000") }),
-            "cool" => LerpRainbow(hue, new (double, string)[] { (0, "#0044ff"), (120, "#00ffff"), (240, "#0088ff"), (360, "#0044ff") }),
-            "neon" => LerpRainbow(hue, new (double, string)[] { (0, "#ff00ff"), (90, "#00ffff"), (180, "#88ff00"), (270, "#ffff00"), (360, "#ff00ff") }),
-            "pastel" => LerpRainbow(hue, new (double, string)[] { (0, "#ffcccc"), (72, "#ffffcc"), (144, "#ccffcc"), (216, "#ccffff"), (288, "#ccccff"), (360, "#ffcccc") }),
-            _ => HslToRgb(hue, 1.0, 0.5)
-        };
+            var r = new Rectangle { Width = Snap(b.W), Height = Snap(b.H), Fill = brush };
+            Canvas.SetLeft(r, Snap(b.X));
+            Canvas.SetTop(r, Snap(b.Y));
+            shapes.Children.Add(r);
+        }
     }
 
-    private static Color LerpRainbow(double hue, (double h, string color)[] stops)
+    /// <summary>Один кадр анимации: двигает только трансформы, прозрачность и цвет.</summary>
+    private void PreviewFrame()
     {
-        for (int i = 0; i < stops.Length - 1; i++)
+        var s = _previewState;
+        var shapes = _previewShapes;
+        if (s == null || shapes == null || _previewTg == null || _previewRotate == null || _previewScale == null) return;
+
+        double t = _animPhase;
+        double animScale = 1.0;
+        double animOpacity = s.Opacity / 100.0;
+
+        if (s.Animation != "none")
         {
-            if (hue >= stops[i].h && hue <= stops[i + 1].h)
+            double dur = s.Animation == "scale"
+                ? CrosshairGeometry.ScaleDuration
+                : CrosshairGeometry.AnimDuration(s.Speed);
+            double u = CrosshairGeometry.Triangle(t, dur);
+            switch (s.Animation)
             {
-                double t = (hue - stops[i].h) / (stops[i + 1].h - stops[i].h);
-                var c1 = Color.Parse(stops[i].color);
-                var c2 = Color.Parse(stops[i + 1].color);
-                return Color.FromRgb(
-                    (byte)(c1.R + (c2.R - c1.R) * t),
-                    (byte)(c1.G + (c2.G - c1.G) * t),
-                    (byte)(c1.B + (c2.B - c1.B) * t));
+                case "pulse":
+                    animScale = CrosshairGeometry.PulseFrom + u * (CrosshairGeometry.PulseTo - CrosshairGeometry.PulseFrom);
+                    break;
+                case "scale":
+                    animScale = CrosshairGeometry.ScaleFrom + u * (CrosshairGeometry.ScaleTo - CrosshairGeometry.ScaleFrom);
+                    break;
+                case "glow":
+                    animOpacity = (s.Opacity / 100.0) * (1.0 + u * (CrosshairGeometry.GlowDim - 1.0));
+                    break;
             }
         }
-        return Color.Parse(stops[0].color);
+
+        // Один угол = статичный поворот + спин + орбита: в оверлее всё это тоже
+        // сводится к поворотам вокруг одной точки, поэтому картинка совпадает.
+        double angle = s.Rotation;
+        if (s.SpinEnabled)
+        {
+            double phase = (t / CrosshairGeometry.SpinDuration(s.SpinSpeed)) * 360.0;
+            angle += s.SpinDir == "reverse" ? -phase : phase;
+        }
+        if (s.OrbitEnabled)
+        {
+            double phase = (t / CrosshairGeometry.OrbitDuration(s.OrbitSpeed)) * 360.0;
+            angle += s.OrbitDir == "reverse" ? -phase : phase;
+        }
+
+        if (s.RainbowEnabled && _previewPaletteCount > 0)
+        {
+            CrosshairGeometry.PaletteColor(_previewPaletteRgb, _previewPaletteCount, t,
+                CrosshairGeometry.RainbowCycleDuration(s.RainbowSpeed), out byte rr, out byte gg, out byte bb);
+            var c = Color.FromRgb(rr, gg, bb);
+            foreach (var b in _previewBrushes) b.Color = c;
+        }
+
+        shapes.Opacity = animOpacity;
+        _previewRotate.Angle = angle;
+        _previewScale.ScaleX = _previewScale.ScaleY = animScale;
+
+        // Идентичный трансформ выключаем: без него тонкие линии остаются чёткими.
+        double norm = angle % 360.0;
+        if (norm < -180.0) norm += 360.0;
+        else if (norm > 180.0) norm -= 360.0;
+        bool identity = Math.Abs(norm) < 0.01 && Math.Abs(animScale - 1.0) < 0.0001;
+        shapes.RenderTransform = identity ? null : _previewTg;
     }
 
-    private static void ApplyRotation(Control element, double centerX, double centerY, double angle)
+    /// <summary>Привязка к границе физического пикселя с учётом DPI (как в оверлее).</summary>
+    private double Snap(double v)
     {
-        if (Math.Abs(angle) < 0.01) return;
-        element.RenderTransformOrigin = new RelativePoint(new Point(centerX, centerY), RelativeUnit.Absolute);
-        element.RenderTransform = new RotateTransform(angle);
+        double scale = 1.0;
+        try { scale = TopLevel.GetTopLevel(_canvas)?.RenderScaling ?? 1.0; } catch { }
+        if (scale <= 0) scale = 1.0;
+        return Math.Round(v * scale, MidpointRounding.AwayFromZero) / scale;
     }
-
     private void ResetDefaults()
     {
         var def = new CrosshairState();
@@ -1052,7 +1197,7 @@ public partial class CrosshairPage : UserControl
         var ch = new CrosshairState
         {
             Preset = _selectedPreset, Animation = _selectedAnim, SpinEnabled = _spinEnabled, OrbitEnabled = _orbitEnabled,
-            Color = _selectedColor, Size = (int)_size, Thickness = (int)_thickness, Opacity = (int)_opacity,
+            Color = _selectedColor, Size = (int)_size, Thickness = _thickness, Opacity = (int)_opacity,
             Speed = (int)_speed, Rotation = (int)_rotation, PosX = (int)_posX, PosY = (int)_posY,
             SpinSpeed = (int)_spinSpeed, SpinDir = _spinDir,
             OrbitRadius = (int)_orbitRadius, OrbitSpeed = (int)_orbitSpeed, OrbitDir = _orbitDir,
@@ -1060,32 +1205,6 @@ public partial class CrosshairPage : UserControl
             BindKey = _bindKey, Symbol = _customSymbol
         };
         _settings.SaveCrosshair(ch);
-    }
-
-    private static Color HslToRgb(double h, double s, double l)
-    {
-        h /= 360;
-        double r, g, b;
-        if (s == 0) { r = g = b = l; }
-        else
-        {
-            double q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            double p = 2 * l - q;
-            r = HueToRgb(p, q, h + 1.0 / 3);
-            g = HueToRgb(p, q, h);
-            b = HueToRgb(p, q, h - 1.0 / 3);
-        }
-        return Color.FromRgb((byte)(r * 255), (byte)(g * 255), (byte)(b * 255));
-    }
-
-    private static double HueToRgb(double p, double q, double t)
-    {
-        if (t < 0) t += 1;
-        if (t > 1) t -= 1;
-        if (t < 1.0 / 6) return p + (q - p) * 6 * t;
-        if (t < 1.0 / 2) return q;
-        if (t < 2.0 / 3) return p + (q - p) * (2.0 / 3 - t) * 6;
-        return p;
     }
 
     private static string Capitalize(string s) => string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];

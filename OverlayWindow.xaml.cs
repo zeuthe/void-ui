@@ -100,10 +100,14 @@ namespace VoidUI
             if (_rustHwnd != IntPtr.Zero && NativeMethods.IsWindowVisible(_rustHwnd))
             {
                 NativeMethods.GetWindowRect(_rustHwnd, out var rect);
-                Left = rect.Left;
-                Top = rect.Top;
-                Width = rect.Right - rect.Left;
-                Height = rect.Bottom - rect.Top;
+                // GetWindowRect возвращает физические пиксели, а Left/Top/Width/Height — DIP.
+                double scale = 1.0;
+                try { scale = System.Windows.Media.VisualTreeHelper.GetDpi(this).PixelsPerDip; } catch { }
+                if (scale <= 0) scale = 1.0;
+                Left = rect.Left / scale;
+                Top = rect.Top / scale;
+                Width = (rect.Right - rect.Left) / scale;
+                Height = (rect.Bottom - rect.Top) / scale;
             }
             else
             {

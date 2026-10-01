@@ -6,8 +6,8 @@
           VerticalAlignment="Stretch" HorizontalAlignment="Stretch" ClipToBounds="True">
 
             <!-- Left: Preview + Applied Settings -->
-            <StackPanel Grid.Column="0" Spacing="10" VerticalAlignment="Top" Margin="0,0,12,0" ClipToBounds="True">
-                <Border Classes="section" ClipToBounds="True">
+            <Grid Grid.Column="0" RowDefinitions="Auto,*" Margin="0,0,12,0" ClipToBounds="True">
+                <Border Classes="section" ClipToBounds="True" Margin="0,0,0,10">
                     <StackPanel Spacing="12">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="LIVE PREVIEW" Classes="section-header" VerticalAlignment="Center"/>
@@ -22,6 +22,9 @@
                         </Border>
                     </StackPanel>
                 </Border>
+                <ScrollViewer Grid.Row="1" Background="Transparent"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                              ClipToBounds="True">
                 <Border Classes="section" ClipToBounds="True">
                     <StackPanel Spacing="4">
                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -43,7 +46,8 @@
                         <TextBlock Name="NbBind" Text="Bind: F6" Foreground="{StaticResource TextTertiary}" FontSize="10" FontFamily="Cascadia Code, Consolas, monospace"/>
                     </StackPanel>
                 </Border>
-            </StackPanel>
+                </ScrollViewer>
+            </Grid>
 
             <!-- Right: Controls (scrollable) -->
             <ScrollViewer Grid.Column="1" Background="Transparent"
@@ -176,8 +180,8 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="Thickness" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
-                            <Slider Name="ThicknessSlider" Minimum="1" Maximum="8" Value="2" Width="140" TickFrequency="1" IsSnapToTickEnabled="True"/>
-                            <TextBlock Name="ThicknessValue" Text="2px" Foreground="{StaticResource TextPrimary}" FontSize="11" VerticalAlignment="Center" Width="36"/>
+                            <Slider Name="ThicknessSlider" Classes="ticks" Minimum="1" Maximum="10" Value="3" Width="140" TickFrequency="0.5" IsSnapToTickEnabled="True" TickPlacement="BottomRight"/>
+                            <TextBlock Name="ThicknessValue" Text="1px" Foreground="{StaticResource TextPrimary}" FontSize="11" VerticalAlignment="Center" Width="36"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="Opacity" Foreground="{StaticResource TextSecondary}" FontSize="11" VerticalAlignment="Center" Width="80"/>
